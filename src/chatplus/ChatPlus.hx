@@ -81,10 +81,9 @@ class ChatPlus {
         if (stamp == null) return;
         var text = G.field(line, "msgText");
         if (G.field(G.field(message, "args"), PLAIN_MARK) == true) {
-            // The mod's own notes: no "[HH:MM] [System]" header, line breaks kept.
+            // The mod's own notes: no "[HH:MM] [System]" header, own colors and prefix (NoteFormat).
             var note:String = G.field(message, "text");
-            var lines = [for (l in note.split("\n")) StringTools.htmlEscape(l)];
-            G.call("ui.comp.FmtText", "set_text", text, [withColor(lines.join("<br/>"), "Chat_System")]);
+            G.call("ui.comp.FmtText", "set_text", text, [NoteFormat.toMarkup(note)]);
             return;
         }
         var channel = G.field(message, "channel");
@@ -117,8 +116,8 @@ class ChatPlus {
         addSystemMessage(SEPARATOR);
     }
 
-    /// Adds a system message to the chat history; every chat window shows it. A `plain` message has
-    /// no `[HH:MM] [System]` header and may span several lines (`\n`).
+    /// Adds a system message to the chat history; every chat window shows it. A `plain` message is
+    /// one of the mod's notes: shown by `NoteFormat` instead of the `[HH:MM] [System]` header, and may span several lines (`\n`).
     public static function addSystemMessage(text:String, plain = false):Void {
         var channelType = HlxRuntime.resolveType("st.Channel");
         if (channelType == null) throw "Game type unavailable: st.Channel";

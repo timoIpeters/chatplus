@@ -94,7 +94,7 @@ class CommandRunner {
     }
 
     function error(text:String):String {
-        G.call("ui.hud.ChatBox", "chatError", chat, [text]);
+        G.call("ui.hud.ChatBox", "chatError", chat, [NoteFormat.PREFIX + text]);
         return "";
     }
 

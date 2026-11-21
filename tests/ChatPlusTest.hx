@@ -1,5 +1,6 @@
 import chatplus.ChatCommand;
 import chatplus.ChatTime;
+import chatplus.NoteFormat;
 import chatplus.PlayerNames;
 import chatplus.Settings;
 
@@ -11,6 +12,7 @@ class ChatPlusTest {
         settings();
         commands();
         playerNames();
+        noteFormat();
         if (failures > 0) {
             Sys.println(failures + " check(s) failed");
             Sys.exit(1);
@@ -71,6 +73,17 @@ class ChatPlusTest {
         check("ignores case, first wins", PlayerNames.find(known, "ANNA").uid, "1");
         check("entry without uid skipped", PlayerNames.find(known, "Bob"), null);
         check("unknown name", PlayerNames.find(known, "Dora"), null);
+    }
+
+    static function noteFormat():Void {
+        check("single line", NoteFormat.toMarkup("Group invite sent to <Anna>"),
+            '<font color="#FF9933">[Chat Plus] Group invite sent to &lt;Anna&gt;</font>');
+        check("help", NoteFormat.toMarkup("Chat commands:\n/w <name> - whisper\nno command - here"),
+            '<font color="#FF9933">[Chat Plus] Chat commands:</font><br/>'
+            + '<font color="#8CC8FF">/w &lt;name&gt;</font><font color="#FF9933"> - whisper</font><br/>'
+            + '<font color="#FF9933">no command - here</font>');
+        check("command without description", NoteFormat.toMarkup("x\n/leave"),
+            '<font color="#FF9933">[Chat Plus] x</font><br/><font color="#FF9933">/leave</font>');
     }
 
     static function check(name:String, actual:Dynamic, expected:Dynamic):Void {
