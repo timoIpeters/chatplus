@@ -1,0 +1,13 @@
+/*
+!/.gitignore
+!/README.md
+!/CLAUDE.md
+!/AUDITLOG.md
+!/TESTABLE.md
+!/compile.hxml
+!/test.hxml
+!/src/
+!/tests/
+!/research/
+/research/internal/
+*:Zone.Identifier

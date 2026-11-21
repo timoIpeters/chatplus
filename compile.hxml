@@ -1,0 +1,7 @@
+# HLX runtime sources: git clone https://github.com/hlx-framework/hlx-core.git vendor/hlx-core
+-cp vendor/hlx-core/hlx-runtime/src
+-D hl-ver=1.16.0
+-cp src
+-main chatplus.ChatPlus
+-dce full
+-hl build/chat-plus/chat-plus.hl
