@@ -108,6 +108,11 @@ class ChatResize {
     /// Lines keep the width they were laid out for. They are removed and the game builds them again from the
     /// history at the new width, as in a new scene: its per-frame poll starts over when `messageIndex` is 0.
     public function rebuildLines():Void {
+        rebuild(chat);
+    }
+
+    /// Removes the shown lines of `chat` (a `ui.hud.ChatBox`); the game builds them again from the history.
+    public static function rebuild(chat:Dynamic):Void {
         if (G.field(chat, "parent") == null) return;
         var messages = G.field(chat, "messages");
         var count:Int = G.call("h2d.Object", "get_numChildren", messages);

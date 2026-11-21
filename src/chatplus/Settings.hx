@@ -2,8 +2,9 @@ package chatplus;
 
 import haxe.Json;
 
-/// An on/off option: the `Settings` field it sets, and its label and tooltip on the settings page.
-typedef Toggle = {key:String, label:String, tooltip:String};
+/// An on/off option: the `Settings` field it sets, its label and tooltip on the settings page, and the
+/// page section it belongs to (`Chat` when not set).
+typedef Toggle = {key:String, label:String, tooltip:String, ?section:String};
 
 /// The mod's options, stored as JSON. Keys missing from the file keep their default.
 class Settings {
@@ -17,7 +18,15 @@ class Settings {
         {key: "inviteFirstMatch", label: "Auto-pick shared names for /invite", tooltip: "If several players have the name, invite the most likely one. Off: pick from a list first."},
         {key: "whisperFirstMatch", label: "Auto-pick shared names for /w", tooltip: "If several players have the name, whisper the most likely one. Off: pick from a list first."},
         {key: "showErrors", label: "Show mod errors in the chat", tooltip: "Red [Chat Plus] lines when something of the game the mod uses is missing (e.g. after a game update) or the mod hits an error. Always written to hlx/logs/hlx.log."},
+        {key: "clearAll", label: "Clear All messages", tooltip: "/clear removes messages of the All channel.", section: CLEAR_SECTION},
+        {key: "clearGroup", label: "Clear Group messages", tooltip: "/clear removes messages of the group channel.", section: CLEAR_SECTION},
+        {key: "clearLocal", label: "Clear Local messages", tooltip: "/clear removes messages of the local channel.", section: CLEAR_SECTION},
+        {key: "clearWhispers", label: "Clear whisper messages", tooltip: "/clear removes whispers you sent and received.", section: CLEAR_SECTION},
+        {key: "clearSystem", label: "Clear system messages", tooltip: "/clear removes game notices and Chat Plus lines.", section: CLEAR_SECTION},
+        {key: "clearWhisperChannels", label: "Clear whisper channels", tooltip: "/clear removes the whisper channels from the channel list. /r then has no one to reply to.", section: CLEAR_SECTION},
+        {key: "clearNote", label: "Show a note after /clear", tooltip: "A \"Chat cleared\" line after /clear.", section: CLEAR_SECTION},
     ];
+    static inline var CLEAR_SECTION = "/clear";
     public static inline var HISTORY_MIN = 100;
     public static inline var HISTORY_MAX = 2000;
     public static inline var HISTORY_STEP = 100;
@@ -44,6 +53,15 @@ class Settings {
     public var whisperFirstMatch = false;
     /// Red chat lines for missing game elements and runtime errors (always in `hlx.log`).
     public var showErrors = true;
+    /// What `/clear` removes: messages per channel kind, and the whisper channels of the channel list.
+    public var clearAll = true;
+    public var clearGroup = true;
+    public var clearLocal = true;
+    public var clearWhispers = true;
+    public var clearSystem = true;
+    public var clearWhisperChannels = false;
+    /// A "Chat cleared" line after `/clear`.
+    public var clearNote = false;
     /// Chat size, changed by dragging its top or right edge.
     public var chatWidth = CHAT_WIDTH_MIN;
     public var chatHeight = CHAT_HEIGHT_MIN;
@@ -73,7 +91,7 @@ class Settings {
     /// The settings page for Better Mod Settings (`configFormats.json` in the mod folder).
     public static function formatsJson():String {
         var configs:Array<Dynamic> = [{type: "title", label: "Chat"}];
-        for (t in TOGGLES) configs.push({key: t.key, label: t.label, type: "checkbox", tooltip: {enabled: true, tooltipText: t.tooltip}});
+        for (t in TOGGLES) if (t.section == null) configs.push(checkbox(t));
         configs.push({
             key: "historyLimit",
             label: "Messages kept on character switch",
@@ -83,9 +101,16 @@ class Settings {
             step: HISTORY_STEP,
             tooltip: {enabled: true, tooltipText: "The oldest messages above this number are dropped at a character switch."},
         });
+        configs.push({type: "title", label: CLEAR_SECTION});
+        for (t in TOGGLES) if (t.section == CLEAR_SECTION) configs.push(checkbox(t));
+        configs.push({type: "title", label: "Chat size"});
         configs.push(slider("chatWidth", "Chat width", CHAT_WIDTH_MIN, CHAT_WIDTH_MAX, "Drag the right edge of the chat to change it. The smallest value is the game's size."));
         configs.push(slider("chatHeight", "Chat height", CHAT_HEIGHT_MIN, CHAT_HEIGHT_MAX, "Drag the top edge of the chat to change it. The smallest value is the game's size."));
         return Json.stringify({configs: configs, displayName: "Chat Plus", schemaVersion: 1}, null, "  ");
+    }
+
+    static function checkbox(t:Toggle):Dynamic {
+        return {key: t.key, label: t.label, type: "checkbox", tooltip: {enabled: true, tooltipText: t.tooltip}};
     }
 
     static function slider(key:String, label:String, min:Int, max:Int, tooltip:String):Dynamic {

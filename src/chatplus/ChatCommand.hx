@@ -11,6 +11,8 @@ enum ChatCommand {
     IgnoreList;
     Unignore(name:String);
     Friend(name:String);
+    /// `/clear`: remove all chat messages, also from the history they are rebuilt from.
+    Clear;
     Help;
     /// `/chatplus`: check the game elements the mod uses.
     Check;
@@ -33,6 +35,7 @@ class ChatCommands {
         "/ignore <name> - ignore a player; /ignore lists the ignored players",
         "/unignore <name> - stop ignoring a player",
         "/friend <name> - send a friend request",
+        "/clear - remove chat messages (what is removed: Mod Settings)",
         "/chatplus - check that the game still has everything the mod uses",
         "/help - this list",
     ];
@@ -51,6 +54,8 @@ class ChatCommands {
                 words.length == 0 ? IgnoreList : Ignore(words[0]);
             case "unignore":
                 words.length == 0 ? Usage("Usage: /unignore <name>") : Unignore(words[0]);
+            case "clear":
+                Clear;
             case "friend", "addfriend":
                 words.length == 0 ? Usage("Usage: /friend <name>") : Friend(words[0]);
             case "help", "?":

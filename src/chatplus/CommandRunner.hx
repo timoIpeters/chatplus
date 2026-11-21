@@ -8,6 +8,9 @@ import chatplus.Game as G;
 /// Runs the mod's chat commands against the game. Each function returns what `ChatBox.handleCommand`
 /// returns: the text to send to the selected channel, or "" when nothing is sent.
 class CommandRunner {
+    // st.Channel constructor index of whispers.
+    static inline var WHISPER = 3;
+    static inline var LOCAL = 0;
     // The last candidate list shown per name (lower case), for `Name:N`.
     static var lastLists:Map<String, Array<Sighting>> = [];
     // A whisper held back while its recipient is picked, per name (lower case).
@@ -33,6 +36,7 @@ class CommandRunner {
             case IgnoreList: ignoreList();
             case Unignore(name): unignore(name);
             case Friend(name): friend(name);
+            case Clear: clear();
             case Help:
                 info(ChatCommands.HELP.join("\n"));
                 "";
@@ -122,6 +126,50 @@ class CommandRunner {
         if (Type.enumConstructor(reason) != "Ok") return error(G.staticCall("HText", "reason", [reason]));
         info("Friend request sent to " + targetName);
         return "";
+    }
+
+    // Every chat window and speech bubble reads ChatClient.history from its own index. The selected kinds are
+    // removed from it and the window is rebuilt, so they stay gone after a scene change or character switch.
+    function clear():String {
+        var settings = ChatPlus.settings;
+        var history = G.staticField("st.player.ChatClient", "history");
+        var messages = G.elements(history);
+        var i = messages.length;
+        while (i-- > 0) {
+            var channel = G.field(messages[i], "channel");
+            if (channel != null && ClearFilter.removes(Type.enumIndex(channel), settings)) G.call("hl.types.ArrayObj", "splice", history, [i, 1]);
+        }
+        if (settings.clearWhisperChannels) clearWhisperChannels();
+        ChatResize.rebuild(chat);
+        if (settings.clearNote) info("Chat cleared");
+        return "";
+    }
+
+    // Removes the whisper channels from the shared option list of the channel dropdown and forgets the
+    // last whisper target (/r). The dropdown is rebuilt the way its own set_options does it. A selected
+    // whisper channel falls back to Local, the channel a new chat window starts with.
+    function clearWhisperChannels():Void {
+        var options = G.staticField("ui.hud.ChatBox", "channelOptions");
+        var dropdown = G.field(chat, "channelDropdown");
+        // The dropdown keeps only an index into the list: read the selected channel before entries are removed.
+        var selected = G.call("ui.comp.Dropdown", "get_selectedValue", dropdown);
+        var list = G.elements(options);
+        var i = list.length;
+        while (i-- > 0) if (Type.enumIndex(G.field(list[i], "value")) == WHISPER) G.call("hl.types.ArrayObj", "splice", options, [i, 1]);
+        var companion = HlxRuntime.resolveType("ui.hud.ChatBox");
+        HlxRuntime.setStaticField(companion, "lastWhisp", null);
+        var lastChannel = G.staticField("ui.hud.ChatBox", "lastChannel");
+        if (lastChannel != null && Type.enumIndex(lastChannel) == WHISPER) HlxRuntime.setStaticField(companion, "lastChannel", null);
+        G.call("ui.comp.Dropdown", "rebuildOptions", dropdown);
+        G.call("ui.comp.Dropdown", "updateSelection", dropdown);
+        var remaining = G.elements(options);
+        var outOfRange = G.integer(G.field(dropdown, "selectedIndex")) >= remaining.length;
+        if (outOfRange || (selected != null && Type.enumIndex(selected) == WHISPER)) {
+            var fallback = null;
+            for (option in remaining) if (fallback == null && Type.enumIndex(G.field(option, "value")) == LOCAL) fallback = G.field(option, "value");
+            if (fallback == null && remaining.length > 0) fallback = G.field(remaining[0], "value");
+            if (fallback != null) G.call("ui.hud.ChatBox", "setChannel", chat, [fallback]);
+        }
     }
 
     function leave():String {

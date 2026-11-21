@@ -14,6 +14,7 @@ An HLX mod for Farever that improves the chat.
   | `/ignore <name>` | Ignores a player, like the player menu. `/ignore` alone lists the ignored players |
   | `/unignore <name>` | Stops ignoring a player (searched in your ignore list) |
   | `/friend`, `/addfriend <name>` | Sends a friend request |
+  | `/clear` | Removes chat messages, also after a scene change or character switch. What it removes is set on the settings page (default: all messages; whisper channels and the address book stay) |
   | `/help` | Lists all chat commands |
   | `/chatplus` | Checks that the game still has everything the mod uses (after a game update) |
 
@@ -51,6 +52,9 @@ The values are stored in `<Farever folder>\hlx\config\chat-plus\config.json` (HL
 | `whisperFirstMatch` | `false` | `/w` with a shared name whispers the best match right away; off: list first, message kept until you pick |
 | `showErrors` | `true` | Red `[Chat Plus]` lines in the chat for missing game elements and errors (always in `hlx\logs\hlx.log`) |
 | `historyLimit` | `500` | Most messages kept at a character switch (100–2000) |
+| `clearAll`, `clearGroup`, `clearLocal`, `clearWhispers`, `clearSystem` | `true` | `/clear` removes messages of that kind (system = game notices and Chat Plus lines) |
+| `clearWhisperChannels` | `false` | `/clear` also removes the whisper channels from the channel list |
+| `clearNote` | `false` | A "Chat cleared" line after `/clear` |
 | `chatWidth` | `480` | Chat width (480–1920), also set by dragging the right edge |
 | `chatHeight` | `250` | Chat height (250–1080), also set by dragging the top edge |
 

@@ -1,6 +1,7 @@
 import chatplus.ChatCommand;
 import chatplus.ChatSize;
 import chatplus.ChatTime;
+import chatplus.ClearFilter;
 import chatplus.GameCheck;
 import chatplus.NoteFormat;
 import chatplus.PlayerBook;
@@ -41,6 +42,13 @@ class ChatPlusTest {
         check("default inviteFirstMatch", d.inviteFirstMatch, true);
         check("default rememberClosed", d.rememberClosed, true);
         check("default showErrors", d.showErrors, true);
+        check("default /clear: all messages, channels kept, no note",
+            [d.clearAll, d.clearGroup, d.clearLocal, d.clearWhispers, d.clearSystem, d.clearWhisperChannels, d.clearNote].join(","), "true,true,true,true,true,false,false");
+        var keepWhispers = Settings.parse('{"clearWhispers": false, "clearSystem": false}');
+        check("filter: whispers kept", ClearFilter.removes(3, keepWhispers), false);
+        check("filter: group removed", ClearFilter.removes(4, keepWhispers), true);
+        check("filter: both system channels kept", ClearFilter.removes(2, keepWhispers) || ClearFilter.removes(5, keepWhispers), false);
+        check("filter: local and all removed", ClearFilter.removes(0, keepWhispers) && ClearFilter.removes(1, keepWhispers), true);
         check("default chat size is the game's", d.chatWidth + "x" + d.chatHeight, "480x250");
         var sized = Settings.parse('{"chatWidth": 700, "chatHeight": 100}');
         check("chat size parsed, below the minimum raised", sized.chatWidth + "x" + sized.chatHeight, "700x250");
@@ -78,6 +86,7 @@ class ChatPlusTest {
         var configs:Array<Dynamic> = formats.configs;
         check("formats: display name", formats.displayName, "Chat Plus");
         check("formats: title first", configs[0].type, "title");
+        check("formats: sections", [for (c in configs) if (c.type == "title") c.label].join(","), "Chat,/clear,Chat size");
         check("formats: one checkbox per toggle, in order", [for (c in configs) if (c.type == "checkbox") c.key].join(","), [for (t in Settings.TOGGLES) t.key].join(","));
         check("formats: every checkbox has a tooltip", [for (c in configs) if (c.type == "checkbox" && (c.tooltip == null || c.tooltip.tooltipText == "")) c.key].length, 0);
         var slider:Dynamic = [for (c in configs) if (c.type == "slider") c][0];
@@ -105,6 +114,7 @@ class ChatPlusTest {
         check("unignore", Std.string(ChatCommands.parse("unignore", ["Bob"])), "Unignore(Bob)");
         check("unignore without name", Std.string(ChatCommands.parse("unignore", [])), "Usage(Usage: /unignore <name>)");
         check("friend", Std.string(ChatCommands.parse("friend", ["Bob"])), "Friend(Bob)");
+        check("clear", Std.string(ChatCommands.parse("clear", [])), "Clear");
         check("addfriend alias", Std.string(ChatCommands.parse("addfriend", ["Bob"])), "Friend(Bob)");
         check("help", Std.string(ChatCommands.parse("help", [])), "Help");
         check("chatplus", Std.string(ChatCommands.parse("chatplus", [])), "Check");
