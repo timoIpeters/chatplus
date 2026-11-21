@@ -1,4 +1,5 @@
 import chatplus.ChatCommand;
+import chatplus.ChatSize;
 import chatplus.ChatTime;
 import chatplus.GameCheck;
 import chatplus.NoteFormat;
@@ -40,6 +41,17 @@ class ChatPlusTest {
         check("default inviteFirstMatch", d.inviteFirstMatch, true);
         check("default rememberClosed", d.rememberClosed, true);
         check("default showErrors", d.showErrors, true);
+        check("default chat size is the game's", d.chatWidth + "x" + d.chatHeight, "480x250");
+        var sized = Settings.parse('{"chatWidth": 700, "chatHeight": 100}');
+        check("chat size parsed, below the minimum raised", sized.chatWidth + "x" + sized.chatHeight, "700x250");
+        var r = ChatSize.dragged(480, 250, 100.4, 50.6, 1000, 600);
+        check("drag adds the distance", r.width + "x" + r.height, "580x301");
+        r = ChatSize.dragged(600, 300, -500, -500, 1000, 600);
+        check("drag stops at the minimum", r.width + "x" + r.height, "480x250");
+        r = ChatSize.dragged(600, 300, 900, 900, 1000, 600);
+        check("drag stops at the maximum", r.width + "x" + r.height, "1000x600");
+        r = ChatSize.dragged(480, 250, 50, 50, 300, 200);
+        check("minimum wins over a small screen", r.width + "x" + r.height, "480x250");
         check("parsed rememberClosed", Settings.parse('{"rememberClosed": false}').rememberClosed, false);
         check("default whisperFirstMatch", d.whisperFirstMatch, false);
         check("parsed whisperFirstMatch", Settings.parse('{"whisperFirstMatch": true}').whisperFirstMatch, true);
@@ -69,6 +81,7 @@ class ChatPlusTest {
         check("formats: one checkbox per toggle, in order", [for (c in configs) if (c.type == "checkbox") c.key].join(","), [for (t in Settings.TOGGLES) t.key].join(","));
         check("formats: every checkbox has a tooltip", [for (c in configs) if (c.type == "checkbox" && (c.tooltip == null || c.tooltip.tooltipText == "")) c.key].length, 0);
         var slider:Dynamic = [for (c in configs) if (c.type == "slider") c][0];
+        check("formats: size sliders", [for (c in configs) if (c.type == "slider") c.key].join(","), "historyLimit,chatWidth,chatHeight");
         check("formats: historyLimit slider", slider.key + " " + slider.min + "-" + slider.max + "/" + slider.step, "historyLimit 100-2000/100");
         check("formats: default limit on the slider grid", (new Settings().historyLimit - slider.min) % slider.step, 0);
 

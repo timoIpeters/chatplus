@@ -82,6 +82,11 @@ class ChatPlus {
         flushing = false;
     }
 
+    /// Writes the options, e.g. after the chat was resized.
+    public static function saveSettings():Void {
+        try File.saveContent(SETTINGS_FILE, settings.toJson()) catch (error:Dynamic) log("writing " + SETTINGS_FILE, error);
+    }
+
     static function onConfigChanged(payload:Dynamic):Void {
         var rememberedBefore = settings.rememberPlayers;
         settings = loadSettings();
@@ -179,6 +184,7 @@ class ChatPlus {
         chatReady = true;
         flushErrors();
         try keepClosed(instance) catch (error:Dynamic) log("keeping the chat closed", error);
+        try new ChatResize(instance) catch (error:Dynamic) log("adding the chat resize handles", error);
         previousChat = instance;
         try {
             var player = G.call("ui.BaseElement", "get_myPlayer", instance);
@@ -195,6 +201,15 @@ class ChatPlus {
             if (G.field(G.field(message, "args"), PLAIN_MARK) == true) return;
             remember(LivePlayers.fromMessage(message, Date.now().getTime()));
         } catch (error:Dynamic) log("noting a chat sender", error);
+    }
+
+    // The game re-applies the chat's style (480×250) in this pass when the chat or a line changes state
+    // (hover, focus); setting the size right after it keeps that from showing for a frame.
+    @:hlx.postfix(h2d.domkit.Style.sync)
+    static function afterStyleSync(instance:Dynamic, dt:Null<Float>, result:Int):Int {
+        var resize = ChatResize.current;
+        if (resize != null) try resize.applySize() catch (error:Dynamic) log("applying the chat size", error);
+        return result;
     }
 
     // The minimize button toggles the CSS class "minimized"; focusing the input (Enter) removes it.

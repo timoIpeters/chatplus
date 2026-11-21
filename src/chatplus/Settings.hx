@@ -21,6 +21,12 @@ class Settings {
     public static inline var HISTORY_MIN = 100;
     public static inline var HISTORY_MAX = 2000;
     public static inline var HISTORY_STEP = 100;
+    /// The game's chat size (`chat-box` style), the smallest the chat can be.
+    public static inline var CHAT_WIDTH_MIN = 480;
+    public static inline var CHAT_HEIGHT_MIN = 250;
+    public static inline var CHAT_WIDTH_MAX = 1920;
+    public static inline var CHAT_HEIGHT_MAX = 1080;
+    public static inline var CHAT_SIZE_STEP = 10;
 
     /// `[HH:MM]` in front of player messages.
     public var timestamps = true;
@@ -38,6 +44,9 @@ class Settings {
     public var whisperFirstMatch = false;
     /// Red chat lines for missing game elements and runtime errors (always in `hlx.log`).
     public var showErrors = true;
+    /// Chat size, changed by dragging its top or right edge.
+    public var chatWidth = CHAT_WIDTH_MIN;
+    public var chatHeight = CHAT_HEIGHT_MIN;
     /// Most messages kept across a character switch; older ones are dropped at the switch.
     public var historyLimit = 500;
 
@@ -56,6 +65,8 @@ class Settings {
             if (Std.isOfType(value, Bool)) Reflect.setField(s, t.key, value);
         }
         if (Std.isOfType(data.historyLimit, Int) && data.historyLimit > 0) s.historyLimit = data.historyLimit;
+        if (Std.isOfType(data.chatWidth, Int)) s.chatWidth = Std.int(Math.max(CHAT_WIDTH_MIN, data.chatWidth));
+        if (Std.isOfType(data.chatHeight, Int)) s.chatHeight = Std.int(Math.max(CHAT_HEIGHT_MIN, data.chatHeight));
         return s;
     }
 
@@ -72,13 +83,21 @@ class Settings {
             step: HISTORY_STEP,
             tooltip: {enabled: true, tooltipText: "The oldest messages above this number are dropped at a character switch."},
         });
+        configs.push(slider("chatWidth", "Chat width", CHAT_WIDTH_MIN, CHAT_WIDTH_MAX, "Drag the right edge of the chat to change it. The smallest value is the game's size."));
+        configs.push(slider("chatHeight", "Chat height", CHAT_HEIGHT_MIN, CHAT_HEIGHT_MAX, "Drag the top edge of the chat to change it. The smallest value is the game's size."));
         return Json.stringify({configs: configs, displayName: "Chat Plus", schemaVersion: 1}, null, "  ");
+    }
+
+    static function slider(key:String, label:String, min:Int, max:Int, tooltip:String):Dynamic {
+        return {key: key, label: label, type: "slider", min: min, max: max, step: CHAT_SIZE_STEP, tooltip: {enabled: true, tooltipText: tooltip}};
     }
 
     public function toJson():String {
         var data:Dynamic = {};
         for (t in TOGGLES) Reflect.setField(data, t.key, get(t.key));
         data.historyLimit = historyLimit;
+        data.chatWidth = chatWidth;
+        data.chatHeight = chatHeight;
         return Json.stringify(data, null, "  ");
     }
 }

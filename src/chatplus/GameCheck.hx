@@ -40,6 +40,17 @@ class GameCheck {
         {type: "domkit.Properties", member: "hasClass", kind: Method, feature: "keep a closed chat closed"},
         {type: "domkit.Properties", member: "toggleClass", kind: Method, feature: "keep a closed chat closed"},
         {type: "GameApp", member: "get", kind: StaticMethod, feature: "address book"},
+        {type: "h2d.Flow", member: "set_enableInteractive", kind: Method, feature: "chat resize"},
+        {type: "h2d.Interactive", member: "startCapture", kind: Method, feature: "chat resize"},
+        {type: "h2d.Interactive", member: "stopCapture", kind: Method, feature: "chat resize"},
+        {type: "h2d.Scene", member: "get_mouseX", kind: Method, feature: "chat resize"},
+        {type: "h2d.Flow", member: "set_minWidth", kind: Method, feature: "chat resize"},
+        {type: "h2d.Text", member: "set_maxWidth", kind: Method, feature: "chat resize"},
+        {type: "ui.UIElement", member: "bindUpdate", kind: Method, feature: "chat resize"},
+        {type: "h2d.domkit.Style", member: "sync", kind: Method, feature: "chat resize"},
+        {type: "ui.BaseUI", member: "getIconCursor", kind: Method, feature: "chat resize"},
+        {type: "h2d.Tile", member: "fromColor", kind: StaticMethod, feature: "chat resize"},
+        {type: "h2d.Flow", member: "set_backgroundTile", kind: Method, feature: "chat resize"},
     ];
 
     /// The requirements `exists` does not find.

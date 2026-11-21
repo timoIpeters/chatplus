@@ -23,6 +23,10 @@ An HLX mod for Farever that improves the chat.
 - `/help` also shows the game's channel keys: Tab and Shift+Tab while typing cycle All, Group, Local and whispers. The game's options don't list them.
 
 
+## Chat size
+
+Drag the chat's top edge (taller), right edge (wider) or top-right corner (both). Hovering an edge shows a red line and the drag cursor. The game's size is the smallest. The size is saved and also has sliders on the settings page.
+
 ## After a game update
 
 At every start the mod checks that the game still has the functions it uses. Missing ones are listed in the chat as red `[Chat Plus]` lines with the feature that stops working; other errors appear the same way, each kind once per session. Type `/chatplus` to run the check yourself. Everything is also written to `hlx\logs\hlx.log`.
@@ -44,6 +48,8 @@ The values are stored in `<Farever folder>\hlx\config\chat-plus\config.json` (HL
 | `whisperFirstMatch` | `false` | `/w` with a shared name whispers the best match right away; off: list first, message kept until you pick |
 | `showErrors` | `true` | Red `[Chat Plus]` lines in the chat for missing game elements and errors (always in `hlx\logs\hlx.log`) |
 | `historyLimit` | `500` | Most messages kept at a character switch (100–2000) |
+| `chatWidth` | `480` | Chat width (480–1920), also set by dragging the right edge |
+| `chatHeight` | `250` | Chat height (250–1080), also set by dragging the top edge |
 
 ## Build
 
