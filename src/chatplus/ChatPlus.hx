@@ -10,10 +10,19 @@ import chatplus.Game as G;
 
 /// Chat improvements: a timestamp in front of every player message, chat history and whisper
 /// channels kept across a character switch, and more chat commands (`/help`) that find players by name
-/// through an address book of seen players. Options are in `hlx/mods/chat-plus/settings.json`.
+/// through an address book of seen players. Options: Esc → Mod Settings → Chat Plus (Better Mod Settings),
+/// stored in `hlx/config/chat-plus/config.json`.
 @:build(hlx.runtime.Mod.build())
 class ChatPlus {
-    static inline var SETTINGS_FILE = "hlx/mods/chat-plus/settings.json";
+    static inline var MOD_NAME = "chat-plus";
+    // HLX ModConfig location, read and written by Better Mod Settings.
+    static inline var SETTINGS_FILE = "hlx/config/chat-plus/config.json";
+    // Location of the options before they moved to the HLX config folder.
+    static inline var OLD_SETTINGS_FILE = "hlx/mods/chat-plus/settings.json";
+    // The settings page Better Mod Settings shows for this mod.
+    static inline var FORMATS_FILE = "hlx/mods/chat-plus/configFormats.json";
+    // Published by Better Mod Settings after it saved this mod's config.json.
+    static inline var CONFIG_CHANGED = "better-mod-settings/config-changed/";
     static inline var PLAYERS_FILE = "hlx/mods/chat-plus/players.json";
     // Seconds between writes of the address book while players are being recorded.
     static inline var SAVE_INTERVAL = 30;
@@ -37,6 +46,25 @@ class ChatPlus {
     static function main():Void {
         settings = loadSettings();
         book = loadBook();
+        writeFormats();
+        hlx.runtime.Bus.subscribe(CONFIG_CHANGED + MOD_NAME, onConfigChanged);
+    }
+
+    static function onConfigChanged(payload:Dynamic):Void {
+        var rememberedBefore = settings.rememberPlayers;
+        settings = loadSettings();
+        if (settings.rememberPlayers && !rememberedBefore) {
+            bookDirty = true;
+            saveBook(true);
+        }
+    }
+
+    // Rewritten when it differs, so the settings page always matches this version of the mod.
+    static function writeFormats():Void {
+        try {
+            var json = Settings.formatsJson();
+            if (!FileSystem.exists(FORMATS_FILE) || File.getContent(FORMATS_FILE) != json) File.saveContent(FORMATS_FILE, json);
+        } catch (error:Dynamic) log("writing " + FORMATS_FILE, error);
     }
 
     static function loadBook():PlayerBook {
@@ -69,10 +97,11 @@ class ChatPlus {
     static function loadSettings():Settings {
         try {
             if (FileSystem.exists(SETTINGS_FILE)) return Settings.parse(File.getContent(SETTINGS_FILE));
-            // Written once so the options can be edited by hand.
-            var defaults = new Settings();
-            File.saveContent(SETTINGS_FILE, defaults.toJson());
-            return defaults;
+            // Written once, from the old location if there is one, so Better Mod Settings shows the current values.
+            var initial = FileSystem.exists(OLD_SETTINGS_FILE) ? Settings.parse(File.getContent(OLD_SETTINGS_FILE)) : new Settings();
+            FileSystem.createDirectory(haxe.io.Path.directory(SETTINGS_FILE));
+            File.saveContent(SETTINGS_FILE, initial.toJson());
+            return initial;
         } catch (error:Dynamic) {
             log("reading " + SETTINGS_FILE + ", using the defaults", error);
             return new Settings();

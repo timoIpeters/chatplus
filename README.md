@@ -21,11 +21,12 @@ An HLX mod for Farever that improves the chat.
 
 - `/help` also shows the game's channel keys: Tab and Shift+Tab while typing cycle All, Group, Local and whispers. The game's options don't list them.
 
-Planned: a settings panel next to the chat's close button.
 
 ## Settings
 
-`<Farever folder>\hlx\mods\chat-plus\settings.json`, written with the defaults on the first start. Restart the game after editing it.
+Esc → Mod Settings → Chat Plus. The page needs the Better Mod Settings mod; the mod writes its page description (`hlx\mods\chat-plus\configFormats.json`) at start, so after the first install restart the game once if the page is missing. Changes apply at once to new messages, the next command and the next scene.
+
+The values are stored in `<Farever folder>\hlx\config\chat-plus\config.json` (HLX's config folder; taken over once from the old `hlx\mods\chat-plus\settings.json`).
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -36,7 +37,7 @@ Planned: a settings panel next to the chat's close button.
 | `rememberPlayers` | `true` | Keep the address book of seen players across game restarts |
 | `inviteFirstMatch` | `true` | `/invite` with a shared name invites the best match right away |
 | `whisperFirstMatch` | `false` | `/w` with a shared name whispers the best match right away; off: list first, message kept until you pick |
-| `historyLimit` | `500` | Most messages kept at a character switch |
+| `historyLimit` | `500` | Most messages kept at a character switch (100–2000) |
 
 ## Build
 
