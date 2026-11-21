@@ -22,7 +22,7 @@ class CommandRunner {
             case Invite(name): invite(name);
             case Leave: leave();
             case Help:
-                for (line in ChatCommands.HELP) info(line);
+                info(ChatCommands.HELP.join("\n"));
                 "";
             case Usage(text): error(text);
         }
@@ -99,6 +99,6 @@ class CommandRunner {
     }
 
     function info(text:String):Void {
-        ChatPlus.addSystemMessage(text);
+        ChatPlus.addSystemMessage(text, true);
     }
 }

@@ -16,6 +16,8 @@ class ChatPlus {
     // st.Channel constructors without a sender: the game already puts the time in their header.
     static inline var CHANNEL_SYSTEM = 2;
     static inline var CHANNEL_SYSTEM_EVENT = 5;
+    // Field in `args` of the mod's own system messages. The game reads `args` only for `notify` messages.
+    static inline var PLAIN_MARK = "chatPlus";
 
     static var settings:Settings;
 
@@ -77,13 +79,20 @@ class ChatPlus {
         var message = G.field(line, "message");
         var stamp:Null<Float> = G.field(message, "localStamp");
         if (stamp == null) return;
+        var text = G.field(line, "msgText");
+        if (G.field(G.field(message, "args"), PLAIN_MARK) == true) {
+            // The mod's own notes: no "[HH:MM] [System]" header, line breaks kept.
+            var note:String = G.field(message, "text");
+            var lines = [for (l in note.split("\n")) StringTools.htmlEscape(l)];
+            G.call("ui.comp.FmtText", "set_text", text, [withColor(lines.join("<br/>"), "Chat_System")]);
+            return;
+        }
         var channel = G.field(message, "channel");
         var channelIndex = Type.enumIndex(channel);
         if (!settings.timestamps || channelIndex == CHANNEL_SYSTEM || channelIndex == CHANNEL_SYSTEM_EVENT) return;
         var time = ChatTime.format(stamp, Sys.time(), Date.now().getTime());
         var color:String = G.staticCall("ui.hud.ChatBoxMessage", "getChannelColor", [channel]);
         var prefix = withColor("[" + time + "] ", color);
-        var text = G.field(line, "msgText");
         var current:String = G.field(text, "prevUnformatted");
         G.call("ui.comp.FmtText", "set_text", text, [prefix + (current == null ? "" : current)]);
     }
@@ -108,13 +117,14 @@ class ChatPlus {
         addSystemMessage(SEPARATOR);
     }
 
-    /// Adds a `[HH:MM] [System] text` line to the chat history; every chat window shows it.
-    public static function addSystemMessage(text:String):Void {
+    /// Adds a system message to the chat history; every chat window shows it. A `plain` message has
+    /// no `[HH:MM] [System]` header and may span several lines (`\n`).
+    public static function addSystemMessage(text:String, plain = false):Void {
         var channelType = HlxRuntime.resolveType("st.Channel");
         if (channelType == null) throw "Game type unavailable: st.Channel";
         var channel = HlxRuntime.constructEnum(channelType, "System", [null]);
         // localReceiveMessage only stamps the message and appends it to the static history; it never reads `this`.
-        G.call("st.player.ChatClient", "localReceiveMessage", null, [{channel: channel, sender: null, text: text, notify: null, args: null}]);
+        G.call("st.player.ChatClient", "localReceiveMessage", null, [{channel: channel, sender: null, text: text, notify: null, args: plain ? {chatPlus: true} : null}]);
     }
 
     static function log(action:String, error:Dynamic):Void {
