@@ -1,6 +1,7 @@
 /*
 !/.gitignore
 !/README.md
+!/LICENSE
 !/CLAUDE.md
 !/compile.hxml
 !/test.hxml

@@ -90,3 +90,7 @@ To remove the mod, delete `hlx\mods\chat-plus\` and, for its settings, `hlx\conf
 ## After a game update
 
 At every start Chat Plus checks that the game still has the functions it uses. If something is missing, red `[Chat Plus]` lines in the chat name it and the feature that stops working; the rest of the mod keeps working. `/chatplus` runs the check at any time. Details are in `hlx\logs\hlx.log`.
+
+## License
+
+MIT License, © 2026 Timo Peters (see `LICENSE`). Contains code from [HLX Core](https://github.com/hlx-framework/hlx-core), MIT License, © 2026 hlx-framework.

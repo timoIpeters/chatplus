@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds a release: runs the tests, compiles the mod, writes configFormats.json and packs
+# Builds a release: runs the tests, compiles the mod, writes configFormats.json and packs it with README.md and LICENSE into
 # build/release/chat-plus-<version>.zip with hlx/mods/chat-plus/ inside (for Vortex or extracting
 # into the Farever folder). The version comes from src/chatplus/Version.hx.
 #
@@ -25,7 +25,7 @@ rm -rf build/release/stage
 mkdir -p "$stage"
 cp build/chat-plus/chat-plus.hl "$stage/"
 haxe formats.hxml "$stage/configFormats.json" > /dev/null
-cp README.md "$stage/"
+cp README.md LICENSE "$stage/"
 
 zip="build/release/chat-plus-$version.zip"
 rm -f "$zip"
