@@ -1,77 +1,92 @@
 # Chat Plus
 
-An HLX mod for Farever that improves the chat.
+A better chat for Farever: timestamps, chat history that survives a character switch, a resizable chat, and commands that find any player you have met by name.
 
-- `[HH:MM]` in front of every player message (the time your client received it).
-- Chat messages and whisper channels stay when you switch character. Optionally a system line `------ character switch ------` marks the switch (`switchMessage`). The oldest messages are dropped above 500.
-- More chat commands, next to the game's own `/all`, `/p`, `/s`, `/r`:
+## Features
 
-  | Command | Does |
-  |---|---|
-  | `/w`, `/whisper`, `/tell <name> [message]` | Opens a whisper channel with the player and sends the message |
-  | `/invite`, `/inv <name>` | Group invite, like the player menu |
-  | `/leave` | Leaves your group |
-  | `/ignore <name>` | Ignores a player, like the player menu. `/ignore` alone lists the ignored players |
-  | `/unignore <name>` | Stops ignoring a player (searched in your ignore list) |
-  | `/friend`, `/addfriend <name>` | Sends a friend request |
-  | `/clear` | Removes chat messages, also after a scene change or character switch. What it removes is set on the settings page (default: all messages; whisper channels and the address book stay) |
-  | `/help` | Lists all chat commands |
-  | `/chatplus` | Checks that the game still has everything the mod uses (after a game update) |
+- **Timestamps.** `[HH:MM]` in front of every player message, in the channel's color.
+- **Chat kept on character switch.** Messages and whisper channels stay when you return to the character selection and log in with another character. An optional line `------ character switch ------` marks the switch.
+- **Resizable chat.** Drag the chat's top edge (taller), right edge (wider) or top-right corner (both). Hovering an edge shows a red line and the drag cursor. The game's size is the smallest; your size is saved.
+- **A closed chat stays closed.** Close the chat with its minimize button and it stays closed when you enter a dungeon, change map or switch character. Press Enter or click its button to open it as usual.
+- **More chat commands** (see below): whisper, invite, ignore or befriend players by name, leave your group, clear the chat.
+- **Address book.** Every player you meet (chat, whispers, group, map, friends) is remembered, also across game restarts, so `/w` and `/invite` work for players who are not around anymore.
+- **Settings page** in Esc → Mod Settings (with Better Mod Settings).
+- **English and German.** The mod's texts follow the game's language.
 
-  Names are found, ignoring case, among players on your map, in your group, your friends, and an address book of every player the mod has seen (chat senders, whisper partners, group members, players on your map), kept across restarts in `hlx\mods\chat-plus\players.json`.
+## Commands
 
-  Character names are not unique. When several accounts match, the mod uses the best match (map, then group, then friends, then the most recently seen) and lists all of them: right-click a line for the game's player menu, or type `/invite Senix:2`. By default `/invite` invites the best match right away, while `/w` only lists the players and keeps your message until you pick one (`/w Senix:2` sends it); both can be changed (`inviteFirstMatch`, `whisperFirstMatch`).
+The game's own commands keep working: `/all`, `/p`, `/s`, `/r`. Chat Plus adds:
 
-- A chat you closed with its minimize button stays closed when you change scene (dungeon, map, character switch). Pressing Enter or clicking it opens it as before.
+| Command | What it does |
+|---|---|
+| `/w`, `/whisper`, `/tell <name> [message]` | Opens a whisper channel with the player and sends the message |
+| `/invite`, `/inv <name>` | Invites the player to your group |
+| `/leave` | Leaves your group |
+| `/ignore <name>` | Ignores the player. `/ignore` alone lists the players you ignore |
+| `/unignore <name>` | Stops ignoring the player |
+| `/friend`, `/addfriend <name>` | Sends a friend request |
+| `/clear` | Removes chat messages; they don't come back after a scene change or character switch. What it removes is set in the settings |
+| `/help` | Lists all chat commands, including the game's |
+| `/chatplus` | Checks that the game still has everything the mod uses |
 
-- `/help` also shows the game's channel keys: Tab and Shift+Tab while typing cycle All, Group, Local and whispers. The game's options don't list them.
+Tip: Tab and Shift+Tab switch the channel while you type. This is a game feature that the game's options don't list.
 
+### Finding players by name
 
-## Languages
+Names are matched without regard to case, among players on your map, in your group, your friends and the address book.
 
-The mod's texts (`/help`, notes, errors, the settings page) follow the game's language: German or English; every other game language gets English. Command names stay English, like the game's own `/p` and `/s`. After switching the game's language, the settings page follows with the next chat window (scene change).
+Character names in Farever are not unique: several players can have the same name. When a name matches several players, Chat Plus lists them with what it knows (class, level, where and when you saw them):
 
-## Chat size
+```
+[Chat Plus] 2 players named Senix, using 1:
+1) Senix - Rogue, level 28, on your map
+2) Senix - whispered with you (21:14)
+Pick another: /invite Senix:2, or right-click a line
+```
 
-Drag the chat's top edge (taller), right edge (wider) or top-right corner (both). Hovering an edge shows a red line and the drag cursor. The game's size is the smallest. The size is saved and also has sliders on the settings page.
-
-## After a game update
-
-At every start the mod checks that the game still has the functions it uses. Missing ones are listed in the chat as red `[Chat Plus]` lines with the feature that stops working; other errors appear the same way, each kind once per session. Type `/chatplus` to run the check yourself. Everything is also written to `hlx\logs\hlx.log`.
+Right-click a line for the game's player menu, or type the name with the number (`/invite Senix:2`). By default `/invite` invites the most likely player right away, while `/w`, `/ignore` and `/friend` wait for your pick. A held whisper keeps your message: `/w Senix:2` sends it.
 
 ## Settings
 
-Esc → Mod Settings → Chat Plus. The page needs the Better Mod Settings mod; the mod writes its page description (`hlx\mods\chat-plus\configFormats.json`) at start, so after the first install restart the game once if the page is missing. Changes apply at once to new messages, the next command and the next scene.
+Esc → Mod Settings → Chat Plus. Changes apply right away.
 
-The values are stored in `<Farever folder>\hlx\config\chat-plus\config.json` (HLX's config folder; taken over once from the old `hlx\mods\chat-plus\settings.json`).
-
-| Key | Default | Meaning |
+| Section | Setting | Default |
 |---|---|---|
-| `timestamps` | `true` | Time in front of player messages |
-| `keepHistory` | `true` | Keep messages and whisper channels across a character switch |
-| `switchMessage` | `false` | System line at each character switch (needs `keepHistory`) |
-| `rememberClosed` | `true` | A closed chat stays closed in the next scene |
-| `rememberPlayers` | `true` | Keep the address book of seen players across game restarts |
-| `inviteFirstMatch` | `true` | `/invite` with a shared name invites the best match right away |
-| `whisperFirstMatch` | `false` | `/w` with a shared name whispers the best match right away; off: list first, message kept until you pick |
-| `showErrors` | `true` | Red `[Chat Plus]` lines in the chat for missing game elements and errors (always in `hlx\logs\hlx.log`) |
-| `historyLimit` | `500` | Most messages kept at a character switch (100–2000) |
-| `clearAll`, `clearGroup`, `clearLocal`, `clearWhispers`, `clearSystem` | `true` | `/clear` removes messages of that kind (system = game notices and Chat Plus lines) |
-| `clearWhisperChannels` | `false` | `/clear` also removes the whisper channels from the channel list |
-| `clearNote` | `false` | A "Chat cleared" line after `/clear` |
-| `chatWidth` | `480` | Chat width (480–1920), also set by dragging the right edge |
-| `chatHeight` | `250` | Chat height (250–1080), also set by dragging the top edge |
+| Chat | Timestamps | on |
+| | Keep a closed chat closed | on |
+| Character switch | Keep chat on character switch | on |
+| | Character switch line | off |
+| | Messages kept on character switch | 500 |
+| Players & commands | Remember players across restarts | on |
+| | Auto-pick shared names for /invite | on |
+| | Auto-pick shared names for /w | off |
+| /clear | Clear All / Group / Local / whisper / system messages | on |
+| | Clear whisper channels | off |
+| | Show a note after /clear | off |
+| Chat size | Chat width, Chat height | 480 × 250 (the game's size) |
+| Troubleshooting | Show mod errors in the chat | on |
 
-## Build
+Without Better Mod Settings, the values can be edited in `hlx\config\chat-plus\config.json` (restart the game afterwards).
 
-Needs `haxe` (see `../workbench/WORKSPACE.md`) and the HLX runtime sources:
+## Requirements
 
-```sh
-git clone --depth 1 https://github.com/hlx-framework/hlx-core.git vendor/hlx-core
-haxe test.hxml      # All checks passed
-haxe compile.hxml   # build/chat-plus/chat-plus.hl
-```
+- [HLX Core](https://github.com/hlx-framework/hlx-core).
+- Better Mod Settings by xWink, for the settings page (optional).
 
-## Install
+## Installation
 
-HLX Core must be installed in the game. Copy `build/chat-plus/chat-plus.hl` to `<Farever folder>\hlx\mods\chat-plus\`, or from WSL: `../workbench/tools/game_pc.sh push-mod .`
+Install with Vortex, or extract the archive into the Farever game folder so that the mod ends up in `<Farever folder>\hlx\mods\chat-plus\chat-plus.hl`. Start the game. If the Chat Plus page is missing in Mod Settings on the first start, restart the game once.
+
+To remove the mod, delete `hlx\mods\chat-plus\` and, for its settings, `hlx\config\chat-plus\`.
+
+## Good to know
+
+- Timestamps show when your client received the message.
+- `/w` and `/invite` can only find players the mod has seen: on your map, in your group, in your friend list, or in your chat. The game offers no name search.
+- The address book is stored in `hlx\mods\chat-plus\players.json`. Turn off "Remember players across restarts" to keep it for the current session only.
+- `/clear` cannot be undone.
+- The mod changes only your own client. Nothing is sent that the game's own chat and player menu couldn't send.
+
+## After a game update
+
+At every start Chat Plus checks that the game still has the functions it uses. If something is missing, red `[Chat Plus]` lines in the chat name it and the feature that stops working; the rest of the mod keeps working. `/chatplus` runs the check at any time. Details are in `hlx\logs\hlx.log`.
