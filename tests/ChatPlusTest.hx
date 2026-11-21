@@ -37,6 +37,7 @@ class ChatPlusTest {
         check("default switchMessage", d.switchMessage, false);
         check("default inviteFirstMatch", d.inviteFirstMatch, true);
         check("default rememberClosed", d.rememberClosed, true);
+        check("default channelButtons", d.channelButtons, true);
         check("parsed rememberClosed", Settings.parse('{"rememberClosed": false}').rememberClosed, false);
         check("default whisperFirstMatch", d.whisperFirstMatch, false);
         check("parsed whisperFirstMatch", Settings.parse('{"whisperFirstMatch": true}').whisperFirstMatch, true);

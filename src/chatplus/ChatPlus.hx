@@ -32,6 +32,7 @@ class ChatPlus {
     static var bookDirty = false;
     // The chat window of the previous scene, to carry its closed state over to the next one.
     static var previousChat:Dynamic;
+    static var channelBar:Null<ChannelBar>;
     static var bookSaved = 0.0;
 
     static function main():Void {
@@ -117,6 +118,8 @@ class ChatPlus {
     static function afterChatBoxInit(instance:Dynamic, result:Void):Void {
         try keepClosed(instance) catch (error:Dynamic) log("keeping the chat closed", error);
         previousChat = instance;
+        channelBar = null;
+        if (settings.channelButtons) try channelBar = new ChannelBar(instance) catch (error:Dynamic) log("adding the channel buttons", error);
         try {
             var player = G.call("ui.BaseElement", "get_myPlayer", instance);
             if (player == null) return;
@@ -132,6 +135,15 @@ class ChatPlus {
             if (G.field(G.field(message, "args"), PLAIN_MARK) == true) return;
             remember(LivePlayers.fromMessage(message, Date.now().getTime()));
         } catch (error:Dynamic) log("noting a chat sender", error);
+    }
+
+    @:hlx.prefix(App.render)
+    static function beforeRender(instance:Dynamic, engine:Dynamic):HlxPrefixResult<Void> {
+        if (channelBar != null) try channelBar.update() catch (error:Dynamic) {
+            log("updating the channel buttons", error);
+            channelBar = null;
+        }
+        return Continue;
     }
 
     // The minimize button toggles the CSS class "minimized"; focusing the input (Enter) removes it.

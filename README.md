@@ -19,7 +19,9 @@ An HLX mod for Farever that improves the chat.
 
 - A chat you closed with its minimize button stays closed when you change scene (dungeon, map, character switch). Pressing Enter or clicking it opens it as before.
 
-Planned: channel buttons and a channel hotkey, a settings panel next to the chat's close button.
+- Channel buttons above the input: All, Group, Local and your last whisper partner. The current channel is highlighted. Tab and Shift+Tab while typing cycle the channels (a game feature).
+
+Planned: a settings panel next to the chat's close button.
 
 ## Settings
 
@@ -31,6 +33,7 @@ Planned: channel buttons and a channel hotkey, a settings panel next to the chat
 | `keepHistory` | `true` | Keep messages and whisper channels across a character switch |
 | `switchMessage` | `false` | System line at each character switch (needs `keepHistory`) |
 | `rememberClosed` | `true` | A closed chat stays closed in the next scene |
+| `channelButtons` | `true` | Channel buttons above the input |
 | `rememberPlayers` | `true` | Keep the address book of seen players across game restarts |
 | `inviteFirstMatch` | `true` | `/invite` with a shared name invites the best match right away |
 | `whisperFirstMatch` | `false` | `/w` with a shared name whispers the best match right away; off: list first, message kept until you pick |
