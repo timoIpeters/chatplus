@@ -2,8 +2,25 @@ package chatplus;
 
 import haxe.Json;
 
+/// An on/off option: the `Settings` field it sets, and its label and tooltip on the settings page.
+typedef Toggle = {key:String, label:String, tooltip:String};
+
 /// The mod's options, stored as JSON. Keys missing from the file keep their default.
 class Settings {
+    /// The on/off options in page order. Each `key` is a `Bool` field of this class.
+    public static final TOGGLES:Array<Toggle> = [
+        {key: "timestamps", label: "Timestamps", tooltip: "[HH:MM] in front of every player message: the time your client received it."},
+        {key: "keepHistory", label: "Keep chat on character switch", tooltip: "Messages and whisper channels stay after a character switch."},
+        {key: "switchMessage", label: "Character switch line", tooltip: "A line \"------ character switch ------\" in the chat at each character switch. Needs \"Keep chat on character switch\"."},
+        {key: "rememberClosed", label: "Keep a closed chat closed", tooltip: "A chat closed with its minimize button stays closed when you change scene (dungeon, map, character)."},
+        {key: "rememberPlayers", label: "Remember players across restarts", tooltip: "/w and /invite find players you met in earlier sessions. Stored in hlx/mods/chat-plus/players.json."},
+        {key: "inviteFirstMatch", label: "Auto-pick shared names for /invite", tooltip: "If several players have the name, invite the most likely one. Off: pick from a list first."},
+        {key: "whisperFirstMatch", label: "Auto-pick shared names for /w", tooltip: "If several players have the name, whisper the most likely one. Off: pick from a list first."},
+    ];
+    public static inline var HISTORY_MIN = 100;
+    public static inline var HISTORY_MAX = 2000;
+    public static inline var HISTORY_STEP = 100;
+
     /// `[HH:MM]` in front of player messages.
     public var timestamps = true;
     /// Keep chat messages and whisper channels when switching character.
@@ -23,23 +40,42 @@ class Settings {
 
     public function new() {}
 
+    public function get(key:String):Bool {
+        return Reflect.field(this, key) == true;
+    }
+
     /// Settings from JSON text. Throws on invalid JSON.
     public static function parse(json:String):Settings {
         var s = new Settings();
         var data:Dynamic = Json.parse(json);
-        if (Std.isOfType(data.timestamps, Bool)) s.timestamps = data.timestamps;
-        if (Std.isOfType(data.keepHistory, Bool)) s.keepHistory = data.keepHistory;
-        if (Std.isOfType(data.switchMessage, Bool)) s.switchMessage = data.switchMessage;
-        if (Std.isOfType(data.rememberClosed, Bool)) s.rememberClosed = data.rememberClosed;
-        if (Std.isOfType(data.rememberPlayers, Bool)) s.rememberPlayers = data.rememberPlayers;
-        if (Std.isOfType(data.inviteFirstMatch, Bool)) s.inviteFirstMatch = data.inviteFirstMatch;
-        if (Std.isOfType(data.whisperFirstMatch, Bool)) s.whisperFirstMatch = data.whisperFirstMatch;
+        for (t in TOGGLES) {
+            var value = Reflect.field(data, t.key);
+            if (Std.isOfType(value, Bool)) Reflect.setField(s, t.key, value);
+        }
         if (Std.isOfType(data.historyLimit, Int) && data.historyLimit > 0) s.historyLimit = data.historyLimit;
         return s;
     }
 
+    /// The settings page for Better Mod Settings (`configFormats.json` in the mod folder).
+    public static function formatsJson():String {
+        var configs:Array<Dynamic> = [{type: "title", label: "Chat"}];
+        for (t in TOGGLES) configs.push({key: t.key, label: t.label, type: "checkbox", tooltip: {enabled: true, tooltipText: t.tooltip}});
+        configs.push({
+            key: "historyLimit",
+            label: "Messages kept on character switch",
+            type: "slider",
+            min: HISTORY_MIN,
+            max: HISTORY_MAX,
+            step: HISTORY_STEP,
+            tooltip: {enabled: true, tooltipText: "The oldest messages above this number are dropped at a character switch."},
+        });
+        return Json.stringify({configs: configs, displayName: "Chat Plus", schemaVersion: 1}, null, "  ");
+    }
+
     public function toJson():String {
-        return Json.stringify({timestamps: timestamps, keepHistory: keepHistory, switchMessage: switchMessage, rememberClosed: rememberClosed, rememberPlayers: rememberPlayers,
-            inviteFirstMatch: inviteFirstMatch, whisperFirstMatch: whisperFirstMatch, historyLimit: historyLimit}, null, "  ");
+        var data:Dynamic = {};
+        for (t in TOGGLES) Reflect.setField(data, t.key, get(t.key));
+        data.historyLimit = historyLimit;
+        return Json.stringify(data, null, "  ");
     }
 }

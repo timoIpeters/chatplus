@@ -54,6 +54,21 @@ class ChatPlusTest {
         var round = Settings.parse(s.toJson());
         check("round trip", round.timestamps + "," + round.keepHistory + "," + round.switchMessage + "," + round.historyLimit, "false,true,false,50");
 
+        var t = Settings.parse('{"timestamps": false}');
+        check("get", t.get("timestamps"), false);
+        for (toggle in Settings.TOGGLES) check("toggle key is a Bool field: " + toggle.key, Std.isOfType(Reflect.field(new Settings(), toggle.key), Bool), true);
+        check("every toggle saved", [for (toggle in Settings.TOGGLES) if (new Settings().toJson().indexOf('"' + toggle.key + '"') < 0) toggle.key].length, 0);
+
+        var formats:Dynamic = haxe.Json.parse(Settings.formatsJson());
+        var configs:Array<Dynamic> = formats.configs;
+        check("formats: display name", formats.displayName, "Chat Plus");
+        check("formats: title first", configs[0].type, "title");
+        check("formats: one checkbox per toggle, in order", [for (c in configs) if (c.type == "checkbox") c.key].join(","), [for (t in Settings.TOGGLES) t.key].join(","));
+        check("formats: every checkbox has a tooltip", [for (c in configs) if (c.type == "checkbox" && (c.tooltip == null || c.tooltip.tooltipText == "")) c.key].length, 0);
+        var slider:Dynamic = [for (c in configs) if (c.type == "slider") c][0];
+        check("formats: historyLimit slider", slider.key + " " + slider.min + "-" + slider.max + "/" + slider.step, "historyLimit 100-2000/100");
+        check("formats: default limit on the slider grid", (new Settings().historyLimit - slider.min) % slider.step, 0);
+
         var threw = false;
         try Settings.parse("{") catch (_:Dynamic) threw = true;
         check("invalid JSON throws", threw, true);
