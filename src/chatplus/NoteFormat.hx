@@ -2,7 +2,8 @@ package chatplus;
 
 using StringTools;
 
-/// Markup for the mod's own chat messages: orange text with a `[Chat Plus]` prefix on the first line.
+/// Markup for the mod's own chat messages: orange text with a `[Chat Plus]` prefix on the first line
+/// (left out for follow-up lines of a list).
 /// A line `/command ... - description` shows the command part in light blue.
 class NoteFormat {
     public static inline var ORANGE = "#FF9933";
@@ -10,9 +11,9 @@ class NoteFormat {
     public static inline var PREFIX = "[Chat Plus] ";
     static inline var COMMAND_SEPARATOR = " - ";
 
-    public static function toMarkup(text:String):String {
+    public static function toMarkup(text:String, withPrefix = true):String {
         var lines = text.split("\n");
-        var out = [for (i in 0...lines.length) line(i == 0 ? PREFIX + lines[i] : lines[i])];
+        var out = [for (i in 0...lines.length) line(i == 0 && withPrefix ? PREFIX + lines[i] : lines[i])];
         return out.join("<br/>");
     }
 

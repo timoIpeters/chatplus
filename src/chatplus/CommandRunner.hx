@@ -1,12 +1,16 @@
 package chatplus;
 
 import chatplus.ChatCommand;
-import chatplus.PlayerNames.KnownPlayer;
+import chatplus.PlayerBook;
+import chatplus.PlayerLookup;
 import chatplus.Game as G;
 
 /// Runs the mod's chat commands against the game. Each function returns what `ChatBox.handleCommand`
 /// returns: the text to send to the selected channel, or "" when nothing is sent.
 class CommandRunner {
+    // The last candidate list shown per name (lower case), for `Name:N`.
+    static var lastLists:Map<String, Array<Sighting>> = [];
+
     final chat:Dynamic;
     final player:Dynamic;
 
@@ -29,8 +33,8 @@ class CommandRunner {
     }
 
     function whisper(name:String, message:String):String {
-        var target = find(name);
-        if (target == null) return unknownPlayer(name);
+        var target = find(name, "/w");
+        if (target == null) return "";
         var channelType = HlxRuntime.resolveType("st.Channel");
         if (channelType == null) throw "Game type unavailable: st.Channel";
         // Same channel as "Send message" in the player menu: it is added to the dropdown and selected.
@@ -41,8 +45,8 @@ class CommandRunner {
 
     // Same calls as "Invite to group" in the player menu (GameUI.openPlayerInteractionMenu).
     function invite(name:String):String {
-        var target = find(name);
-        if (target == null) return unknownPlayer(name);
+        var target = find(name, "/invite");
+        if (target == null) return "";
         var group = G.field(player, "group");
         for (member in G.elements(G.field(group, "players"))) {
             var uid:String = G.field(member, "uid");
@@ -62,35 +66,40 @@ class CommandRunner {
         return "";
     }
 
-    function find(name:String):Null<KnownPlayer> {
-        var self:String = G.field(player, "uid");
-        var known = [for (p in knownPlayers()) if (p.uid != self) p];
-        return PlayerNames.find(known, name);
-    }
-
-    // Players on the current map first, then friends, then senders and whisper partners from the chat, newest first.
-    function knownPlayers():Array<KnownPlayer> {
-        var list:Array<KnownPlayer> = [];
-        for (p in G.elements(G.field(G.field(player, "layer"), "players")))
-            list.push({name: G.call("st.Player", "getName", p), uid: G.field(p, "uid")});
-        for (f in G.elements(G.field(G.field(player, "friendList"), "friends")))
-            list.push({name: G.field(G.field(f, "metadata"), "heroName"), uid: G.field(f, "uid")});
-        var history = G.elements(G.staticField("st.player.ChatClient", "history"));
-        history.reverse();
-        for (m in history) {
-            var sender = G.field(m, "sender");
-            if (sender != null) list.push({name: G.field(sender, "name"), uid: G.field(sender, "uid")});
-            var channel = G.field(m, "channel");
-            if (channel != null && Type.enumConstructor(channel) == "Player") {
-                var params = Type.enumParameters(channel);
-                list.push({name: params[1], uid: params[0]});
+    /// The player meant by `text` (`Name` or `Name:N`), or null after showing an error. With several
+    /// accounts of that name it takes the first and lists all, each line right-clickable.
+    function find(text:String, command:String):Null<Sighting> {
+        var query = PlayerLookup.parseQuery(text);
+        var key = query.name.toLowerCase();
+        if (query.pick != null) {
+            var list = lastLists.get(key);
+            if (list == null || query.pick > list.length) {
+                error("No player " + text + ". Type " + command + " " + query.name + " to list the players of that name");
+                return null;
             }
+            return list[query.pick - 1];
         }
-        return list;
+        var live = LivePlayers.read(player);
+        ChatPlus.remember(live.onMap.concat(live.group).concat(live.friends));
+        var self:String = G.field(player, "uid");
+        var found = PlayerLookup.candidates(query.name, live.onMap, live.group, live.friends, ChatPlus.book, self);
+        if (found.length == 0) {
+            error("Unknown player " + query.name + ": only players you have seen on your map, in your group, in your friend list or in chat can be found");
+            return null;
+        }
+        if (found.length > 1) showChoices(query.name, found, command);
+        return found[0];
     }
 
-    function unknownPlayer(name:String):String {
-        return error("Unknown player " + name + ": only players on your map, friends and players from your chat can be found");
+    function showChoices(name:String, found:Array<Sighting>, command:String):Void {
+        lastLists.set(name.toLowerCase(), found);
+        var now = Date.now().getTime();
+        info(found.length + " players named " + name + ", using 1:");
+        for (i in 0...found.length) {
+            var s = found[i];
+            ChatPlus.addSystemMessage((i + 1) + ") " + s.name + " - " + PlayerLookup.describe(s, now), true, false, {name: s.name, uid: s.uid});
+        }
+        ChatPlus.addSystemMessage("Pick another: " + command + " " + name + ":2, or right-click a line", true, false);
     }
 
     function error(text:String):String {

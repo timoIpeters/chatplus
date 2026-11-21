@@ -1,7 +1,8 @@
 import chatplus.ChatCommand;
 import chatplus.ChatTime;
 import chatplus.NoteFormat;
-import chatplus.PlayerNames;
+import chatplus.PlayerBook;
+import chatplus.PlayerLookup;
 import chatplus.Settings;
 
 class ChatPlusTest {
@@ -11,7 +12,8 @@ class ChatPlusTest {
         chatTime();
         settings();
         commands();
-        playerNames();
+        playerBook();
+        playerLookup();
         noteFormat();
         if (failures > 0) {
             Sys.println(failures + " check(s) failed");
@@ -67,12 +69,58 @@ class ChatPlusTest {
         check("unknown command stays with the game", ChatCommands.parse("dance", []), null);
     }
 
-    static function playerNames():Void {
-        var known = [{name: "Anna", uid: "1"}, {name: "anna", uid: "2"}, {name: null, uid: "3"}, {name: "Bob", uid: null}, {name: "Cleo", uid: "4"}];
-        check("exact name", PlayerNames.find(known, "Cleo").uid, "4");
-        check("ignores case, first wins", PlayerNames.find(known, "ANNA").uid, "1");
-        check("entry without uid skipped", PlayerNames.find(known, "Bob"), null);
-        check("unknown name", PlayerNames.find(known, "Dora"), null);
+    static function playerBook():Void {
+        var book = new PlayerBook(3);
+        book.record({name: "Senix", uid: "A", seen: 10, source: OnMap, className: "Rogue", level: 28});
+        book.record({name: "senix", uid: "A", seen: 20, source: Chat, channel: "whisper"});
+        check("same name and account: one entry", book.length, 1);
+        var a = book.named("SENIX")[0];
+        check("newer sighting wins", a.source + "/" + a.channel, "chat/whisper");
+        check("class and level kept", a.className + " " + a.level, "Rogue 28");
+        book.record({name: "Senix", uid: "A", seen: 5, source: Friend});
+        check("older sighting ignored", book.named("Senix")[0].seen, 20.0);
+
+        book.record({name: "Senix", uid: "B", seen: 30, source: Chat});
+        book.record({name: "Bran", uid: "A", seen: 15, source: Chat});
+        check("one name, two accounts, newest first", [for (s in book.named("Senix")) s.uid].join(","), "B,A");
+        check("one account, two names", book.named("Bran")[0].uid, "A");
+        book.record({name: "Cleo", uid: "C", seen: 40, source: Chat});
+        check("limit drops the oldest", book.named("Bran").length + "/" + book.length, "0/3");
+        book.record({name: null, uid: "D", seen: 50, source: Chat});
+        book.record({name: "Dora", uid: null, seen: 50, source: Chat});
+        check("entries without name or uid ignored", book.length, 3);
+
+        var round = PlayerBook.fromJson(book.toJson(), 3);
+        check("round trip", [for (s in round.named("Senix")) s.uid + ":" + s.source].join(","), "B:chat,A:chat");
+        check("live is not stored", book.toJson().indexOf("live") == -1, true);
+        check("invalid entries skipped", PlayerBook.fromJson('[{"name":"X"},{"name":"Y","uid":"1","seen":1}]').length, 1);
+    }
+
+    static function playerLookup():Void {
+        check("plain name", PlayerLookup.parseQuery("Senix").name, "Senix");
+        check("pick", PlayerLookup.parseQuery("Senix:2").name + "#" + PlayerLookup.parseQuery("Senix:2").pick, "Senix#2");
+        check("pick 0 is no pick", PlayerLookup.parseQuery("Senix:0").pick, null);
+        check("text after colon is no pick", PlayerLookup.parseQuery("Senix:x").pick, null);
+
+        var book = new PlayerBook();
+        book.record({name: "Senix", uid: "old", seen: 1, source: Chat});
+        book.record({name: "Senix", uid: "new", seen: 9, source: Chat});
+        book.record({name: "Senix", uid: "me", seen: 9, source: Chat});
+        var onMap = [{name: "Senix", uid: "map", seen: 0.0, source: OnMap, live: true}];
+        var group = [{name: "SENIX", uid: "grp", seen: 0.0, source: InGroup, live: true}, {name: "Senix", uid: "map", seen: 0.0, source: InGroup, live: true}];
+        var friends = [{name: "Senix", uid: "new", seen: 0.0, source: Friend, live: true}, {name: "Other", uid: "x", seen: 0.0, source: Friend, live: true}];
+        var found = PlayerLookup.candidates("senix", onMap, group, friends, book, "me");
+        check("order map, group, friends, book; one per account; self left out",
+            [for (s in found) s.uid + ":" + s.source].join(","), "map:map,grp:group,new:friend,old:chat");
+        check("no match", PlayerLookup.candidates("Nobody", onMap, group, friends, book, "me").length, 0);
+
+        var now = new Date(2026, 10, 21, 22, 0, 0).getTime();
+        var today = new Date(2026, 10, 21, 21, 14, 0).getTime();
+        var earlier = new Date(2026, 10, 20, 18, 2, 0).getTime();
+        check("live on map", PlayerLookup.describe({name: "S", uid: "1", seen: now, source: OnMap, className: "Rogue", level: 28, live: true}, now), "Rogue, level 28, on your map");
+        check("live friend", PlayerLookup.describe({name: "S", uid: "1", seen: now, source: Friend, online: false, live: true}, now), "friend, offline");
+        check("whisper today", PlayerLookup.describe({name: "S", uid: "1", seen: today, source: Chat, channel: "whisper"}, now), "whispered with you (21:14)");
+        check("group yesterday", PlayerLookup.describe({name: "S", uid: "1", seen: earlier, source: InGroup, level: 12}, now), "level 12, was in your group (20.11. 18:02)");
     }
 
     static function noteFormat():Void {

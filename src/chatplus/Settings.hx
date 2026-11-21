@@ -10,6 +10,8 @@ class Settings {
     public var keepHistory = true;
     /// System line `------ character switch ------` in the chat at each character switch (needs `keepHistory`).
     public var switchMessage = false;
+    /// Keep the address book of seen players (`players.json`) across game restarts, for `/w` and `/invite`.
+    public var rememberPlayers = true;
     /// Most messages kept across a character switch; older ones are dropped at the switch.
     public var historyLimit = 500;
 
@@ -22,11 +24,12 @@ class Settings {
         if (Std.isOfType(data.timestamps, Bool)) s.timestamps = data.timestamps;
         if (Std.isOfType(data.keepHistory, Bool)) s.keepHistory = data.keepHistory;
         if (Std.isOfType(data.switchMessage, Bool)) s.switchMessage = data.switchMessage;
+        if (Std.isOfType(data.rememberPlayers, Bool)) s.rememberPlayers = data.rememberPlayers;
         if (Std.isOfType(data.historyLimit, Int) && data.historyLimit > 0) s.historyLimit = data.historyLimit;
         return s;
     }
 
     public function toJson():String {
-        return Json.stringify({timestamps: timestamps, keepHistory: keepHistory, switchMessage: switchMessage, historyLimit: historyLimit}, null, "  ");
+        return Json.stringify({timestamps: timestamps, keepHistory: keepHistory, switchMessage: switchMessage, rememberPlayers: rememberPlayers, historyLimit: historyLimit}, null, "  ");
     }
 }
