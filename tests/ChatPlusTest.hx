@@ -26,6 +26,8 @@ class ChatPlusTest {
         check("default timestamps", d.timestamps, true);
         check("default keepHistory", d.keepHistory, true);
         check("default historyLimit", d.historyLimit, 500);
+        check("default switchMessage", d.switchMessage, false);
+        check("parsed switchMessage", Settings.parse('{"switchMessage": true}').switchMessage, true);
 
         var s = Settings.parse('{"timestamps": false, "historyLimit": 50}');
         check("parsed timestamps", s.timestamps, false);
@@ -37,7 +39,7 @@ class ChatPlusTest {
         check("invalid limit keeps default", bad.historyLimit, 500);
 
         var round = Settings.parse(s.toJson());
-        check("round trip", round.timestamps + "," + round.keepHistory + "," + round.historyLimit, "false,true,50");
+        check("round trip", round.timestamps + "," + round.keepHistory + "," + round.switchMessage + "," + round.historyLimit, "false,true,false,50");
 
         var threw = false;
         try Settings.parse("{") catch (_:Dynamic) threw = true;

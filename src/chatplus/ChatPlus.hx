@@ -41,7 +41,7 @@ class ChatPlus {
         try {
             var history = G.staticField("st.player.ChatClient", "history");
             trimHistory(history, settings.historyLimit);
-            addSeparator(history);
+            if (settings.switchMessage) addSeparator(history);
         } catch (error:Dynamic) log("keeping the chat history", error);
         return Skip;
     }
