@@ -10,7 +10,7 @@ import chatplus.Game as G;
 @:build(hlx.runtime.Mod.build())
 class ChatPlus {
     static inline var SETTINGS_FILE = "hlx/mods/chat-plus/settings.json";
-    static inline var SEPARATOR = "──── character switch ────";
+    static inline var SEPARATOR = "------ character switch ------";
     // st.Channel constructors without a sender: the game already puts the time in their header.
     static inline var CHANNEL_SYSTEM = 2;
     static inline var CHANNEL_SYSTEM_EVENT = 5;
