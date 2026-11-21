@@ -222,6 +222,7 @@ class ChatPlusTest {
         check("every section has a heading in both languages", [for (s in Settings.SECTIONS) if (!Texts.EN.exists("title." + s.id) || !Texts.DE.exists("title." + s.id)) s.id].join(","), "");
         check("every setting has a label and a tooltip", [for (t in Settings.TOGGLES) if (!Texts.EN.exists("set." + t.key + ".label") || !Texts.EN.exists("set." + t.key + ".tip")) t.key].join(","), "");
         check("English by default", Texts.get("invite.sent", ["Anna"]), "Group invite sent to Anna");
+        check("check result names the version", Texts.get("check.ok", [45, chatplus.Version.VERSION]), "Chat Plus " + chatplus.Version.VERSION + ": all 45 game elements the mod uses were found.");
         check("unknown key shows the key", Texts.get("no.such.key"), "no.such.key");
         Texts.lang = "de";
         check("German", Texts.get("invite.sent", ["Anna"]), "Gruppeneinladung an Anna gesendet");

@@ -6,6 +6,9 @@
 !/TESTABLE.md
 !/compile.hxml
 !/test.hxml
+!/formats.hxml
+!/release.sh
+!/tools/
 !/src/
 !/tests/
 !/research/

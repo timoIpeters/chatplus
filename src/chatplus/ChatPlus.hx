@@ -49,6 +49,7 @@ class ChatPlus {
     static var flushing = false;
 
     static function main():Void {
+        trace("[ChatPlus] version " + Version.VERSION);
         settings = loadSettings();
         book = loadBook();
         updateLanguage();

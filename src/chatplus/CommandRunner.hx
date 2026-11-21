@@ -42,8 +42,11 @@ class CommandRunner {
                 "";
             case Check:
                 var report = GameCheck.report(GameCheck.missing(Game.exists));
-                if (report == null) info(Texts.get("check.ok", [GameCheck.REQUIRED.length]));
-                else ChatPlus.addSystemMessage(report, true, true, null, true);
+                if (report == null) info(Texts.get("check.ok", [GameCheck.REQUIRED.length, Version.VERSION]));
+                else {
+                    info(Texts.get("check.version", [Version.VERSION]));
+                    ChatPlus.addSystemMessage(report, true, true, null, true);
+                }
                 "";
             case Usage(text): error(text);
         }

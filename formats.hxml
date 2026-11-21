@@ -1,0 +1,4 @@
+# Writes the English configFormats.json: haxe formats.hxml <output file>
+-cp src
+-cp tools
+--run WriteFormats
