@@ -90,7 +90,10 @@ class ChatPlusTest {
         var configs:Array<Dynamic> = formats.configs;
         check("formats: display name", formats.displayName, "Chat Plus");
         check("formats: title first", configs[0].type, "title");
-        check("formats: sections", [for (c in configs) if (c.type == "title") c.label].join(","), "Chat,/clear,Chat size");
+        check("formats: sections", [for (c in configs) if (c.type == "title") c.label].join(","), "Chat,Character switch,Players & commands,/clear,Chat size,Troubleshooting");
+        check("formats: every toggle in a known section", [for (t in Settings.TOGGLES) if (!Lambda.exists(Settings.SECTIONS, s -> s.id == t.section)) t.key].join(","), "");
+        var afterSwitchTitle = configs.indexOf([for (c in configs) if (c.type == "title" && c.label == "Character switch") c][0]);
+        check("formats: history slider under Character switch", configs[afterSwitchTitle + 3].key, "historyLimit");
         check("formats: one checkbox per toggle, in order", [for (c in configs) if (c.type == "checkbox") c.key].join(","), [for (t in Settings.TOGGLES) t.key].join(","));
         check("formats: every checkbox has a tooltip", [for (c in configs) if (c.type == "checkbox" && (c.tooltip == null || c.tooltip.tooltipText == "")) c.key].length, 0);
         var slider:Dynamic = [for (c in configs) if (c.type == "slider") c][0];
@@ -216,6 +219,7 @@ class ChatPlusTest {
         check("every English text has a German one", [for (k in Texts.EN.keys()) if (!Texts.DE.exists(k)) k].join(","), "");
         check("no German text without an English one", [for (k in Texts.DE.keys()) if (!Texts.EN.exists(k)) k].join(","), "");
         check("same placeholders in both languages", [for (k in Texts.EN.keys()) if (Texts.DE.exists(k) && marks(Texts.EN.get(k)) != marks(Texts.DE.get(k))) k].join(","), "");
+        check("every section has a heading in both languages", [for (s in Settings.SECTIONS) if (!Texts.EN.exists("title." + s.id) || !Texts.DE.exists("title." + s.id)) s.id].join(","), "");
         check("every setting has a label and a tooltip", [for (t in Settings.TOGGLES) if (!Texts.EN.exists("set." + t.key + ".label") || !Texts.EN.exists("set." + t.key + ".tip")) t.key].join(","), "");
         check("English by default", Texts.get("invite.sent", ["Anna"]), "Group invite sent to Anna");
         check("unknown key shows the key", Texts.get("no.such.key"), "no.such.key");
@@ -227,7 +231,7 @@ class ChatPlusTest {
         var formats:Dynamic = haxe.Json.parse(Settings.formatsJson());
         var configs:Array<Dynamic> = formats.configs;
         check("German settings page", configs[1].label, "Uhrzeit");
-        check("German headings", [for (c in configs) if (c.type == "title") c.label].join(","), "Chat,/clear,Chatgröße");
+        check("German headings", [for (c in configs) if (c.type == "title") c.label].join(","), "Chat,Charakterwechsel,Spieler & Befehle,/clear,Chatgröße,Fehlersuche");
         Texts.lang = "fr";
         check("other languages get English", Texts.get("clear.done"), "Chat cleared");
         Texts.lang = "en";

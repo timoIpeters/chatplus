@@ -2,31 +2,42 @@ package chatplus;
 
 import haxe.Json;
 
-/// An on/off option: the `Settings` field it sets and the page section it belongs to (`Chat` when not set).
+/// An on/off option: the `Settings` field it sets and the page section it belongs to (a `SECTIONS` id).
 /// Its label and tooltip are the texts `set.<key>.label` and `set.<key>.tip`.
-typedef Toggle = {key:String, ?section:String};
+typedef Toggle = {key:String, section:String};
+
+/// A section of the settings page: heading text `title.<id>`, its checkboxes (`Toggle.section`), then its sliders.
+typedef Section = {id:String, sliders:Array<String>};
 
 /// The mod's options, stored as JSON. Keys missing from the file keep their default.
 class Settings {
     /// The on/off options in page order. Each `key` is a `Bool` field of this class.
     public static final TOGGLES:Array<Toggle> = [
-        {key: "timestamps"},
-        {key: "keepHistory"},
-        {key: "switchMessage"},
-        {key: "rememberClosed"},
-        {key: "rememberPlayers"},
-        {key: "inviteFirstMatch"},
-        {key: "whisperFirstMatch"},
-        {key: "showErrors"},
-        {key: "clearAll", section: CLEAR_SECTION},
-        {key: "clearGroup", section: CLEAR_SECTION},
-        {key: "clearLocal", section: CLEAR_SECTION},
-        {key: "clearWhispers", section: CLEAR_SECTION},
-        {key: "clearSystem", section: CLEAR_SECTION},
-        {key: "clearWhisperChannels", section: CLEAR_SECTION},
-        {key: "clearNote", section: CLEAR_SECTION},
+        {key: "timestamps", section: "chat"},
+        {key: "rememberClosed", section: "chat"},
+        {key: "keepHistory", section: "switch"},
+        {key: "switchMessage", section: "switch"},
+        {key: "rememberPlayers", section: "players"},
+        {key: "inviteFirstMatch", section: "players"},
+        {key: "whisperFirstMatch", section: "players"},
+        {key: "clearAll", section: "clear"},
+        {key: "clearGroup", section: "clear"},
+        {key: "clearLocal", section: "clear"},
+        {key: "clearWhispers", section: "clear"},
+        {key: "clearSystem", section: "clear"},
+        {key: "clearWhisperChannels", section: "clear"},
+        {key: "clearNote", section: "clear"},
+        {key: "showErrors", section: "debug"},
     ];
-    static inline var CLEAR_SECTION = "/clear";
+    /// The page sections in order.
+    public static final SECTIONS:Array<Section> = [
+        {id: "chat", sliders: []},
+        {id: "switch", sliders: ["historyLimit"]},
+        {id: "players", sliders: []},
+        {id: "clear", sliders: []},
+        {id: "size", sliders: ["chatWidth", "chatHeight"]},
+        {id: "debug", sliders: []},
+    ];
     public static inline var HISTORY_MIN = 100;
     public static inline var HISTORY_MAX = 2000;
     public static inline var HISTORY_STEP = 100;
@@ -99,14 +110,16 @@ class Settings {
 
     /// The settings page for Better Mod Settings (`configFormats.json` in the mod folder), in the current language.
     public static function formatsJson():String {
-        var configs:Array<Dynamic> = [{type: "title", label: Texts.get("title.chat")}];
-        for (t in TOGGLES) if (t.section == null) configs.push(checkbox(t));
-        configs.push(slider("historyLimit", HISTORY_MIN, HISTORY_MAX, HISTORY_STEP));
-        configs.push({type: "title", label: Texts.get("title.clear")});
-        for (t in TOGGLES) if (t.section == CLEAR_SECTION) configs.push(checkbox(t));
-        configs.push({type: "title", label: Texts.get("title.size")});
-        configs.push(slider("chatWidth", CHAT_WIDTH_MIN, CHAT_WIDTH_MAX, CHAT_SIZE_STEP));
-        configs.push(slider("chatHeight", CHAT_HEIGHT_MIN, CHAT_HEIGHT_MAX, CHAT_SIZE_STEP));
+        var configs:Array<Dynamic> = [];
+        for (section in SECTIONS) {
+            configs.push({type: "title", label: Texts.get("title." + section.id)});
+            for (t in TOGGLES) if (t.section == section.id) configs.push(checkbox(t));
+            for (key in section.sliders) configs.push(switch (key) {
+                case "historyLimit": slider(key, HISTORY_MIN, HISTORY_MAX, HISTORY_STEP);
+                case "chatWidth": slider(key, CHAT_WIDTH_MIN, CHAT_WIDTH_MAX, CHAT_SIZE_STEP);
+                default: slider(key, CHAT_HEIGHT_MIN, CHAT_HEIGHT_MAX, CHAT_SIZE_STEP);
+            });
+        }
         return Json.stringify({configs: configs, displayName: "Chat Plus", schemaVersion: 1}, null, "  ");
     }
 
