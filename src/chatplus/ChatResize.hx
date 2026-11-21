@@ -100,8 +100,25 @@ class ChatResize {
                 if (hoverCursor != null) G.call("h2d.Interactive", "set_cursor", interactive, [hoverCursor]);
                 for (h in [top, right, corner]) showLine(h, false);
                 ChatPlus.saveSettings();
+                if (ChatPlus.settings.chatWidth != startWidth) rebuildLines();
             }
         } catch (error:Dynamic) ChatPlus.log("resizing the chat", error);
+    }
+
+    /// Lines keep the width they were laid out for. They are removed and the game builds them again from the
+    /// history at the new width, as in a new scene: its per-frame poll starts over when `messageIndex` is 0.
+    public function rebuildLines():Void {
+        if (G.field(chat, "parent") == null) return;
+        var messages = G.field(chat, "messages");
+        var count:Int = G.call("h2d.Object", "get_numChildren", messages);
+        var lines = [];
+        for (i in 0...count) {
+            var child = G.call("h2d.Object", "getChildAt", messages, [i]);
+            // The scrollbar and other parts of the message list stay.
+            if (child != null && hl.Type.getDynamic(child).getTypeName() == "ui.hud.ChatBoxMessage") lines.push(child);
+        }
+        for (line in lines) G.call("h2d.Object", "remove", line);
+        HlxRuntime.setField(chat, "messageIndex", 0);
     }
 
     static function showLine(flow:Dynamic, visible:Bool):Void {

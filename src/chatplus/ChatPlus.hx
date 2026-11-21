@@ -89,7 +89,10 @@ class ChatPlus {
 
     static function onConfigChanged(payload:Dynamic):Void {
         var rememberedBefore = settings.rememberPlayers;
+        var widthBefore = settings.chatWidth;
         settings = loadSettings();
+        var resize = ChatResize.current;
+        if (resize != null && settings.chatWidth != widthBefore) try resize.rebuildLines() catch (error:Dynamic) log("rebuilding the chat lines", error);
         if (settings.rememberPlayers && !rememberedBefore) {
             bookDirty = true;
             saveBook(true);

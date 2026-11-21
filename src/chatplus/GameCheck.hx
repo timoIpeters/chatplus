@@ -51,6 +51,7 @@ class GameCheck {
         {type: "ui.BaseUI", member: "getIconCursor", kind: Method, feature: "chat resize"},
         {type: "h2d.Tile", member: "fromColor", kind: StaticMethod, feature: "chat resize"},
         {type: "h2d.Flow", member: "set_backgroundTile", kind: Method, feature: "chat resize"},
+        {type: "h2d.Object", member: "getChildAt", kind: Method, feature: "chat resize"},
     ];
 
     /// The requirements `exists` does not find.
