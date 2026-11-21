@@ -41,11 +41,11 @@ class PlayerLookup {
     public static function describe(s:Sighting, now:Float):String {
         var parts:Array<String> = [];
         if (s.className != null && s.className != "") parts.push(s.className);
-        if (s.level != null && s.level > 0) parts.push("level " + s.level);
+        if (s.level != null && s.level > 0) parts.push(Texts.get("describe.level", [s.level]));
         parts.push(switch (s.source) {
-            case OnMap: s.live == true ? "on your map" : "was on your map";
-            case InGroup: s.live == true ? "in your group" : "was in your group";
-            case Friend: s.online == null ? "friend" : (s.online ? "friend, online" : "friend, offline");
+            case OnMap: Texts.get(s.live == true ? "describe.onMap" : "describe.wasOnMap");
+            case InGroup: Texts.get(s.live == true ? "describe.inGroup" : "describe.wasInGroup");
+            case Friend: Texts.get(s.online == null ? "describe.friend" : (s.online ? "describe.friendOnline" : "describe.friendOffline"));
             case Chat: chatText(s.channel);
         });
         var text = parts.join(", ");
@@ -55,11 +55,11 @@ class PlayerLookup {
 
     static function chatText(channel:Null<String>):String {
         return switch (channel) {
-            case "whisper": "whispered with you";
-            case "group": "wrote in group chat";
-            case "all": "wrote in All";
-            case "local": "wrote in local chat";
-            default: "wrote in chat";
+            case "whisper": Texts.get("describe.whisper");
+            case "group": Texts.get("describe.groupChat");
+            case "all": Texts.get("describe.allChat");
+            case "local": Texts.get("describe.localChat");
+            default: Texts.get("describe.chat");
         }
     }
 

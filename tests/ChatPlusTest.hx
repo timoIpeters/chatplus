@@ -7,6 +7,7 @@ import chatplus.NoteFormat;
 import chatplus.PlayerBook;
 import chatplus.PlayerLookup;
 import chatplus.Settings;
+import chatplus.Texts;
 
 class ChatPlusTest {
     static var failures = 0;
@@ -19,6 +20,7 @@ class ChatPlusTest {
         playerLookup();
         noteFormat();
         gameCheck();
+        texts();
         if (failures > 0) {
             Sys.println(failures + " check(s) failed");
             Sys.exit(1);
@@ -201,6 +203,34 @@ class ChatPlusTest {
             "Game elements not found (game update?), these features may not work:\nui.hud.ChatBox.handleCommand - chat commands\nst.Channel - mod messages, /w");
         check("static name", GameCheck.name({type: "HText", member: "withColor", kind: StaticMethod, feature: ""}), "HText::withColor");
         check("every requirement but types names a member", [for (r in GameCheck.REQUIRED) if ((r.member == null) != (r.kind == Type)) GameCheck.name(r)].length, 0);
+    }
+
+    static function texts():Void {
+        var placeholders = ~/\{\d\}/g;
+        function marks(s:String):String {
+            var found = [];
+            placeholders.map(s, r -> { found.push(r.matched(0)); ""; });
+            found.sort(Reflect.compare);
+            return found.join("");
+        }
+        check("every English text has a German one", [for (k in Texts.EN.keys()) if (!Texts.DE.exists(k)) k].join(","), "");
+        check("no German text without an English one", [for (k in Texts.DE.keys()) if (!Texts.EN.exists(k)) k].join(","), "");
+        check("same placeholders in both languages", [for (k in Texts.EN.keys()) if (Texts.DE.exists(k) && marks(Texts.EN.get(k)) != marks(Texts.DE.get(k))) k].join(","), "");
+        check("every setting has a label and a tooltip", [for (t in Settings.TOGGLES) if (!Texts.EN.exists("set." + t.key + ".label") || !Texts.EN.exists("set." + t.key + ".tip")) t.key].join(","), "");
+        check("English by default", Texts.get("invite.sent", ["Anna"]), "Group invite sent to Anna");
+        check("unknown key shows the key", Texts.get("no.such.key"), "no.such.key");
+        Texts.lang = "de";
+        check("German", Texts.get("invite.sent", ["Anna"]), "Gruppeneinladung an Anna gesendet");
+        check("German, repeated placeholder", Texts.get("ignore.done", ["Bob"]), "Bob wird ignoriert. /unignore Bob macht das rückgängig");
+        check("German help keeps the command format", ChatCommands.help()[6], "/w, /whisper, /tell <Name> [Text] - einem Spieler zuflüstern");
+        check("German description", PlayerLookup.describe({name: "S", uid: "1", seen: 0, source: OnMap, level: 28, live: true}, 0), "Stufe 28, auf deiner Karte");
+        var formats:Dynamic = haxe.Json.parse(Settings.formatsJson());
+        var configs:Array<Dynamic> = formats.configs;
+        check("German settings page", configs[1].label, "Uhrzeit");
+        check("German headings", [for (c in configs) if (c.type == "title") c.label].join(","), "Chat,/clear,Chatgröße");
+        Texts.lang = "fr";
+        check("other languages get English", Texts.get("clear.done"), "Chat cleared");
+        Texts.lang = "en";
     }
 
     static function check(name:String, actual:Dynamic, expected:Dynamic):Void {

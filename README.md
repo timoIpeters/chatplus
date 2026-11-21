@@ -27,6 +27,10 @@ An HLX mod for Farever that improves the chat.
 - `/help` also shows the game's channel keys: Tab and Shift+Tab while typing cycle All, Group, Local and whispers. The game's options don't list them.
 
 
+## Languages
+
+The mod's texts (`/help`, notes, errors, the settings page) follow the game's language: German or English; every other game language gets English. Command names stay English, like the game's own `/p` and `/s`. After switching the game's language, the settings page follows with the next chat window (scene change).
+
 ## Chat size
 
 Drag the chat's top edge (taller), right edge (wider) or top-right corner (both). Hovering an edge shows a red line and the drag cursor. The game's size is the smallest. The size is saved and also has sliders on the settings page.

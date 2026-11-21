@@ -38,11 +38,11 @@ class CommandRunner {
             case Friend(name): friend(name);
             case Clear: clear();
             case Help:
-                info(ChatCommands.HELP.join("\n"));
+                info(ChatCommands.help().join("\n"));
                 "";
             case Check:
                 var report = GameCheck.report(GameCheck.missing(Game.exists));
-                if (report == null) info("All " + GameCheck.REQUIRED.length + " game elements the mod uses were found.");
+                if (report == null) info(Texts.get("check.ok", [GameCheck.REQUIRED.length]));
                 else ChatPlus.addSystemMessage(report, true, true, null, true);
                 "";
             case Usage(text): error(text);
@@ -75,12 +75,12 @@ class CommandRunner {
         var group = G.field(player, "group");
         for (member in G.elements(G.field(group, "players"))) {
             var uid:String = G.field(member, "uid");
-            if (uid == target.uid) return error(target.name + " is already in your group");
+            if (uid == target.uid) return error(Texts.get("invite.inGroup", [target.name]));
         }
         var reason = G.call("st.Group", "hasInvitePlayerAllowed", group);
         if (Type.enumConstructor(reason) != "Ok") return error(G.staticCall("HText", "reason", [reason]));
         G.call("st.player.Whispers", "sendInviteGroup", G.field(player, "whispers"), [target.uid]);
-        info("Group invite sent to " + target.name);
+        info(Texts.get("invite.sent", [target.name]));
         return "";
     }
 
@@ -89,15 +89,15 @@ class CommandRunner {
     function ignore(name:String):String {
         var target = find(name, "/ignore", false);
         if (target == null) return "";
-        if (G.call("st.Player", "isIgnoring", player, [target.uid]) == true) return error(target.name + " is already ignored");
+        if (G.call("st.Player", "isIgnoring", player, [target.uid]) == true) return error(Texts.get("ignore.already", [target.name]));
         G.call("st.Player", "ignorePlayer", player, [target.uid, target.name, true]);
-        info("Ignoring " + target.name + ". /unignore " + target.name + " to undo");
+        info(Texts.get("ignore.done", [target.name]));
         return "";
     }
 
     function ignoreList():String {
         var names = [for (e in ignored()) e.name];
-        info(names.length == 0 ? "You are not ignoring anyone." : "Ignored players: " + names.join(", "));
+        info(names.length == 0 ? Texts.get("ignore.none") : Texts.get("ignore.list", [names.join(", ")]));
         return "";
     }
 
@@ -105,9 +105,9 @@ class CommandRunner {
     function unignore(name:String):String {
         var key = name.toLowerCase();
         var matches = [for (e in ignored()) if (e.name != null && e.name.toLowerCase() == key) e];
-        if (matches.length == 0) return error(name + " is not on your ignore list");
+        if (matches.length == 0) return error(Texts.get("unignore.notListed", [name]));
         for (e in matches) G.call("st.Player", "ignorePlayer", player, [e.uid, null, false]);
-        info(matches.length == 1 ? "No longer ignoring " + matches[0].name : "No longer ignoring " + matches.length + " players named " + matches[0].name);
+        info(matches.length == 1 ? Texts.get("unignore.one", [matches[0].name]) : Texts.get("unignore.many", [matches.length, matches[0].name]));
         return "";
     }
 
@@ -120,11 +120,11 @@ class CommandRunner {
         var target = find(name, "/friend", false);
         if (target == null) return "";
         var friends = G.field(player, "friendList");
-        if (G.call("st.FriendList", "isFriend", friends, [target.uid]) == true) return error(target.name + " is already your friend");
+        if (G.call("st.FriendList", "isFriend", friends, [target.uid]) == true) return error(Texts.get("friend.already", [target.name]));
         var targetName = target.name;
-        var reason = G.call("st.FriendList", "addFriend", friends, [target.uid, (ok:Bool) -> if (!ok) ChatPlus.addSystemMessage("Friend request to " + targetName + " failed", true, true, null, true)]);
+        var reason = G.call("st.FriendList", "addFriend", friends, [target.uid, (ok:Bool) -> if (!ok) ChatPlus.addSystemMessage(Texts.get("friend.failed", [targetName]), true, true, null, true)]);
         if (Type.enumConstructor(reason) != "Ok") return error(G.staticCall("HText", "reason", [reason]));
-        info("Friend request sent to " + targetName);
+        info(Texts.get("friend.sent", [targetName]));
         return "";
     }
 
@@ -141,7 +141,7 @@ class CommandRunner {
         }
         if (settings.clearWhisperChannels) clearWhisperChannels();
         ChatResize.rebuild(chat);
-        if (settings.clearNote) info("Chat cleared");
+        if (settings.clearNote) info(Texts.get("clear.done"));
         return "";
     }
 
@@ -174,7 +174,7 @@ class CommandRunner {
 
     function leave():String {
         var group = G.field(player, "group");
-        if (group == null || G.call("st.Group", "get_isSolo", group) == true) return error("You are not in a group");
+        if (group == null || G.call("st.Group", "get_isSolo", group) == true) return error(Texts.get("leave.solo"));
         G.call("st.Player", "leaveGroup", player);
         return "";
     }
@@ -187,7 +187,7 @@ class CommandRunner {
         if (query.pick != null) {
             var list = lastLists.get(key);
             if (list == null || query.pick > list.length) {
-                error("No player " + text + ". Type " + command + " " + query.name + " to list the players of that name");
+                error(Texts.get("find.noPick", [text, command, query.name]));
                 return null;
             }
             return list[query.pick - 1];
@@ -197,7 +197,7 @@ class CommandRunner {
         var self:String = G.field(player, "uid");
         var found = PlayerLookup.candidates(query.name, live.onMap, live.group, live.friends, ChatPlus.book, self);
         if (found.length == 0) {
-            error("Unknown player " + query.name + ": only players you have seen on your map, in your group, in your friend list or in chat can be found");
+            error(Texts.get("find.unknown", [query.name]));
             return null;
         }
         if (found.length == 1) return found[0];
@@ -209,14 +209,14 @@ class CommandRunner {
         lastLists.set(name.toLowerCase(), found);
         listed = !actOnFirst;
         var now = Date.now().getTime();
-        info(found.length + " players named " + name + (actOnFirst ? ", using 1:" : ", pick one:"));
+        info(Texts.get(actOnFirst ? "choices.using" : "choices.pick", [found.length, name]));
         for (i in 0...found.length) {
             var s = found[i];
             ChatPlus.addSystemMessage((i + 1) + ") " + s.name + " - " + PlayerLookup.describe(s, now), true, false, {name: s.name, uid: s.uid});
         }
-        var hint = actOnFirst ? "Pick another: " + command + " " + name + ":2" : "Pick: " + command + " " + name + ":1";
-        if (!actOnFirst && command == "/w") hint += " (sends your message)";
-        ChatPlus.addSystemMessage(hint + ", or right-click a line", true, false);
+        var hint = Texts.get(actOnFirst ? "hint.another" : "hint.pick", [command, name]);
+        if (!actOnFirst && command == "/w") hint += Texts.get("hint.sendsMessage");
+        ChatPlus.addSystemMessage(hint + Texts.get("hint.rightClick"), true, false);
     }
 
     function error(text:String):String {

@@ -47,6 +47,7 @@ class GameCheck {
         {type: "domkit.Properties", member: "hasClass", kind: Method, feature: "keep a closed chat closed"},
         {type: "domkit.Properties", member: "toggleClass", kind: Method, feature: "keep a closed chat closed"},
         {type: "GameApp", member: "get", kind: StaticMethod, feature: "address book"},
+        {type: "Options", kind: Type, feature: "German texts"},
         {type: "h2d.Flow", member: "set_enableInteractive", kind: Method, feature: "chat resize"},
         {type: "h2d.Interactive", member: "startCapture", kind: Method, feature: "chat resize"},
         {type: "h2d.Interactive", member: "stopCapture", kind: Method, feature: "chat resize"},
@@ -69,7 +70,7 @@ class GameCheck {
     /// One chat note for the missing elements, or null when nothing is missing.
     public static function report(missing:Array<Requirement>):Null<String> {
         if (missing.length == 0) return null;
-        var lines = ["Game elements not found (game update?), these features may not work:"];
+        var lines = [Texts.get("check.missing")];
         for (r in missing) lines.push(name(r) + " - " + r.feature);
         return lines.join("\n");
     }

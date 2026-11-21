@@ -21,43 +21,32 @@ enum ChatCommand {
 }
 
 class ChatCommands {
-    /// Lines shown by `/help`.
-    public static final HELP = [
-        "Chat commands:",
-        "/all, /map <msg> - All channel",
-        "/p, /party, /gr, /group <msg> - Group channel",
-        "/s, /say <msg> - Local channel",
-        "/r <msg> - reply to the last whisper",
-        "Tab, Shift+Tab - switch channel while typing",
-        "/w, /whisper, /tell <name> [msg] - whisper to a player",
-        "/invite, /inv <name> - invite a player to your group",
-        "/leave - leave your group",
-        "/ignore <name> - ignore a player; /ignore lists the ignored players",
-        "/unignore <name> - stop ignoring a player",
-        "/friend <name> - send a friend request",
-        "/clear - remove chat messages (what is removed: Mod Settings)",
-        "/chatplus - check that the game still has everything the mod uses",
-        "/help - this list",
-    ];
+    static final HELP_KEYS = ["help.title", "help.all", "help.group", "help.local", "help.reply", "help.tab", "help.whisper", "help.invite",
+        "help.leave", "help.ignore", "help.unignore", "help.friend", "help.clear", "help.chatplus", "help.help"];
+
+    /// Lines shown by `/help`, in the current language.
+    public static function help():Array<String> {
+        return [for (key in HELP_KEYS) Texts.get(key)];
+    }
 
     /// The mod's command for `/command args...`, or null when the game should handle it.
     public static function parse(command:String, args:Array<String>):Null<ChatCommand> {
         var words = [for (a in args) if (a != "") a];
         return switch (command.toLowerCase()) {
             case "w", "whisper", "tell":
-                words.length == 0 ? Usage("Usage: /w <name> [message]") : Whisper(words[0], words.slice(1).join(" "));
+                words.length == 0 ? Usage(Texts.get("usage.w")) : Whisper(words[0], words.slice(1).join(" "));
             case "invite", "inv":
-                words.length == 0 ? Usage("Usage: /invite <name>") : Invite(words[0]);
+                words.length == 0 ? Usage(Texts.get("usage.invite")) : Invite(words[0]);
             case "leave":
                 Leave;
             case "ignore":
                 words.length == 0 ? IgnoreList : Ignore(words[0]);
             case "unignore":
-                words.length == 0 ? Usage("Usage: /unignore <name>") : Unignore(words[0]);
+                words.length == 0 ? Usage(Texts.get("usage.unignore")) : Unignore(words[0]);
             case "clear":
                 Clear;
             case "friend", "addfriend":
-                words.length == 0 ? Usage("Usage: /friend <name>") : Friend(words[0]);
+                words.length == 0 ? Usage(Texts.get("usage.friend")) : Friend(words[0]);
             case "help", "?":
                 Help;
             case "chatplus":

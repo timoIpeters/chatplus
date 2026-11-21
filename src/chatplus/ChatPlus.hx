@@ -26,7 +26,6 @@ class ChatPlus {
     static inline var PLAYERS_FILE = "hlx/mods/chat-plus/players.json";
     // Seconds between writes of the address book while players are being recorded.
     static inline var SAVE_INTERVAL = 30;
-    static inline var SEPARATOR = "------ character switch ------";
     // st.Channel constructors without a sender: the game already puts the time in their header.
     static inline var CHANNEL_SYSTEM = 2;
     static inline var CHANNEL_SYSTEM_EVENT = 5;
@@ -52,6 +51,7 @@ class ChatPlus {
     static function main():Void {
         settings = loadSettings();
         book = loadBook();
+        updateLanguage();
         writeFormats();
         hlx.runtime.Bus.subscribe(CONFIG_CHANGED + MOD_NAME, onConfigChanged);
         checkGame();
@@ -99,7 +99,18 @@ class ChatPlus {
         }
     }
 
-    // Rewritten when it differs, so the settings page always matches this version of the mod.
+    // The game keeps its language in Options.language (set by DataTools.setLang). At mod start the game's
+    // options may not be loaded yet, so it is read again for every chat window.
+    static function updateLanguage():Bool {
+        var code:String = null;
+        try code = G.staticField("Options", "language") catch (_:Dynamic) {}
+        var lang = code == "de" ? "de" : "en";
+        if (lang == Texts.lang) return false;
+        Texts.lang = lang;
+        return true;
+    }
+
+    // Rewritten when it differs, so the settings page always matches this version of the mod and the game's language.
     static function writeFormats():Void {
         try {
             var json = Settings.formatsJson();
@@ -190,6 +201,7 @@ class ChatPlus {
     // and it is a good moment to note the players around.
     @:hlx.postfix(ui.hud.ChatBox.init)
     static function afterChatBoxInit(instance:Dynamic, result:Void):Void {
+        if (updateLanguage()) writeFormats();
         chatReady = true;
         flushErrors();
         try keepClosed(instance) catch (error:Dynamic) log("keeping the chat closed", error);
@@ -272,8 +284,8 @@ class ChatPlus {
         var messages = G.elements(history);
         if (messages.length == 0) return;
         var lastText:String = G.field(messages[messages.length - 1], "text");
-        if (lastText == SEPARATOR) return;
-        addSystemMessage(SEPARATOR);
+        if (lastText == Texts.get("separator")) return;
+        addSystemMessage(Texts.get("separator"));
     }
 
     /// Adds a system message to the chat history; every chat window shows it. A `plain` message is
@@ -292,6 +304,6 @@ class ChatPlus {
         trace("[ChatPlus] error while " + action + ": " + Std.string(error));
         if (settings == null || reportedErrors.exists(action)) return;
         reportedErrors.set(action, true);
-        showError("Error while " + action + ": " + Std.string(error));
+        showError(Texts.get("error.while", [action, Std.string(error)]));
     }
 }
