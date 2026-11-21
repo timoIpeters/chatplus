@@ -121,6 +121,22 @@ class ChatResize {
         HlxRuntime.setField(chat, "messageIndex", 0);
     }
 
+    // A handle gets no "mouse out" when a menu or window opens over the game, so its line would stay.
+    // While a line shows, the mouse has to be over that handle.
+    function hideStaleLines():Void {
+        var shown = [for (h in [top, right, corner]) if (h != dragged && number(G.field(h, "alpha")) > 0) h];
+        if (shown.length == 0) return;
+        var p = pointer();
+        var x = p.x - number(G.field(chat, "x"));
+        var y = p.y - number(G.field(chat, "y"));
+        for (h in shown) {
+            var left = number(G.field(h, "x"));
+            var upper = number(G.field(h, "y"));
+            var inside = x >= left && x < left + number(G.field(h, "calculatedWidth")) && y >= upper && y < upper + number(G.field(h, "calculatedHeight"));
+            if (!inside) showLine(h, false);
+        }
+    }
+
     static function showLine(flow:Dynamic, visible:Bool):Void {
         HlxRuntime.setField(flow, "alpha", visible ? LINE_ALPHA : 0.0);
     }
@@ -158,6 +174,7 @@ class ChatResize {
             place(top, 0, 0, width - CORNER, HANDLE);
             place(right, width - HANDLE, CORNER, HANDLE, height - CORNER);
             place(corner, width - CORNER, 0, CORNER, CORNER);
+            hideStaleLines();
         } catch (error:Dynamic) ChatPlus.log("applying the chat size", error);
     }
 
