@@ -4,8 +4,18 @@ An HLX mod for Farever that improves the chat.
 
 - `[HH:MM]` in front of every player message (the time your client received it).
 - Chat messages and whisper channels stay when you switch character. Optionally a system line `------ character switch ------` marks the switch (`switchMessage`). The oldest messages are dropped above 500.
+- More chat commands, next to the game's own `/all`, `/p`, `/s`, `/r`:
 
-Planned: `/w`, `/invite` and more commands, the chat remembering that it was closed, channel buttons and a channel hotkey, a settings panel next to the chat's close button.
+  | Command | Does |
+  |---|---|
+  | `/w`, `/whisper`, `/tell <name> [message]` | Opens a whisper channel with the player and sends the message |
+  | `/invite`, `/inv <name>` | Group invite, like the player menu |
+  | `/leave` | Leaves your group |
+  | `/help` | Lists all chat commands |
+
+  Names are found among players on your map, your friends and players in your chat history, ignoring case.
+
+Planned: the chat remembering that it was closed, channel buttons and a channel hotkey, a settings panel next to the chat's close button.
 
 ## Settings
 

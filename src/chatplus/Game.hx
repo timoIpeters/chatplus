@@ -48,4 +48,13 @@ class Game {
         var t = HlxRuntime.resolveType(type);
         return t == null ? null : HlxRuntime.resolveStaticField(t, name);
     }
+
+    /// Elements of a game array (`hl.types.ArrayObj`, `ArrayDyn`) or of a replicated list that holds one in `array`.
+    public static function elements(array:Dynamic):Array<Dynamic> {
+        if (array == null) return [];
+        var type = hl.Type.getDynamic(array).getTypeName();
+        if (type != "hl.types.ArrayObj" && type != "hl.types.ArrayDyn") return elements(field(array, "array"));
+        var count = integer(field(array, "length"));
+        return [for (i in 0...count) call(type, "getDyn", array, [i])];
+    }
 }

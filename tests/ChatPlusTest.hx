@@ -1,4 +1,6 @@
+import chatplus.ChatCommand;
 import chatplus.ChatTime;
+import chatplus.PlayerNames;
 import chatplus.Settings;
 
 class ChatPlusTest {
@@ -7,6 +9,8 @@ class ChatPlusTest {
     static function main():Void {
         chatTime();
         settings();
+        commands();
+        playerNames();
         if (failures > 0) {
             Sys.println(failures + " check(s) failed");
             Sys.exit(1);
@@ -44,6 +48,29 @@ class ChatPlusTest {
         var threw = false;
         try Settings.parse("{") catch (_:Dynamic) threw = true;
         check("invalid JSON throws", threw, true);
+    }
+
+    static function commands():Void {
+        check("whisper", Std.string(ChatCommands.parse("w", ["Anna", "hi", "there"])), "Whisper(Anna,hi there)");
+        check("whisper without message", Std.string(ChatCommands.parse("tell", ["Anna"])), "Whisper(Anna,)");
+        check("whisper alias, upper case", Std.string(ChatCommands.parse("WHISPER", ["Anna", "x"])), "Whisper(Anna,x)");
+        check("double spaces", Std.string(ChatCommands.parse("w", ["", "Anna", "", "hi"])), "Whisper(Anna,hi)");
+        check("whisper without name", Std.string(ChatCommands.parse("w", [])), "Usage(Usage: /w <name> [message])");
+        check("invite", Std.string(ChatCommands.parse("invite", ["Bob"])), "Invite(Bob)");
+        check("inv alias", Std.string(ChatCommands.parse("inv", ["Bob", "extra"])), "Invite(Bob)");
+        check("invite without name", Std.string(ChatCommands.parse("invite", [""])), "Usage(Usage: /invite <name>)");
+        check("leave", Std.string(ChatCommands.parse("leave", [])), "Leave");
+        check("help", Std.string(ChatCommands.parse("help", [])), "Help");
+        check("game command stays with the game", ChatCommands.parse("p", ["hi"]), null);
+        check("unknown command stays with the game", ChatCommands.parse("dance", []), null);
+    }
+
+    static function playerNames():Void {
+        var known = [{name: "Anna", uid: "1"}, {name: "anna", uid: "2"}, {name: null, uid: "3"}, {name: "Bob", uid: null}, {name: "Cleo", uid: "4"}];
+        check("exact name", PlayerNames.find(known, "Cleo").uid, "4");
+        check("ignores case, first wins", PlayerNames.find(known, "ANNA").uid, "1");
+        check("entry without uid skipped", PlayerNames.find(known, "Bob"), null);
+        check("unknown name", PlayerNames.find(known, "Dora"), null);
     }
 
     static function check(name:String, actual:Dynamic, expected:Dynamic):Void {

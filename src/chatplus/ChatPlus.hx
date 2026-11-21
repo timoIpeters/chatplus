@@ -1,12 +1,14 @@
 package chatplus;
 
 import hlx.runtime.HlxPrefixControl;
+import hlx.runtime.HlxPrefixResult;
 import sys.FileSystem;
 import sys.io.File;
+import chatplus.ChatCommand;
 import chatplus.Game as G;
 
-/// Chat improvements: a timestamp in front of every player message, and chat history and whisper
-/// channels kept across a character switch, marked by a system line. Options are in `hlx/mods/chat-plus/settings.json`.
+/// Chat improvements: a timestamp in front of every player message, chat history and whisper
+/// channels kept across a character switch, and more chat commands (`/help`). Options are in `hlx/mods/chat-plus/settings.json`.
 @:build(hlx.runtime.Mod.build())
 class ChatPlus {
     static inline var SETTINGS_FILE = "hlx/mods/chat-plus/settings.json";
@@ -52,6 +54,20 @@ class ChatPlus {
         return settings.keepHistory ? Skip : Continue;
     }
 
+    // Mod commands are handled here; the game's own commands (/all, /p, /r, ...) go on to the game.
+    @:hlx.prefix(ui.hud.ChatBox.handleCommand)
+    static function beforeHandleCommand(instance:Dynamic, command:String, args:Dynamic):HlxPrefixResult<String> {
+        try {
+            var words = [for (a in G.elements(args)) Std.string(a)];
+            var parsed = ChatCommands.parse(command, words);
+            if (parsed == null) return Continue;
+            return SkipWith(new CommandRunner(instance).run(parsed));
+        } catch (error:Dynamic) {
+            log("running /" + command, error);
+            return Continue;
+        }
+    }
+
     @:hlx.postfix(ui.hud.ChatBoxMessage.init)
     static function afterChatBoxMessageInit(instance:Dynamic, result:Void):Void {
         try decorate(instance) catch (error:Dynamic) log("adding the timestamp", error);
@@ -85,15 +101,20 @@ class ChatPlus {
     // A system message, so every chat window shows it below the previous character's messages.
     // Not added to an empty history (game start) or twice in a row (switching without chatting).
     static function addSeparator(history:Dynamic):Void {
-        var count = G.integer(G.field(history, "length"));
-        if (count == 0) return;
-        var last = G.call("hl.types.ArrayObj", "getDyn", history, [count - 1]);
-        if (G.field(last, "text") == SEPARATOR) return;
+        var messages = G.elements(history);
+        if (messages.length == 0) return;
+        var lastText:String = G.field(messages[messages.length - 1], "text");
+        if (lastText == SEPARATOR) return;
+        addSystemMessage(SEPARATOR);
+    }
+
+    /// Adds a `[HH:MM] [System] text` line to the chat history; every chat window shows it.
+    public static function addSystemMessage(text:String):Void {
         var channelType = HlxRuntime.resolveType("st.Channel");
         if (channelType == null) throw "Game type unavailable: st.Channel";
         var channel = HlxRuntime.constructEnum(channelType, "System", [null]);
         // localReceiveMessage only stamps the message and appends it to the static history; it never reads `this`.
-        G.call("st.player.ChatClient", "localReceiveMessage", null, [{channel: channel, sender: null, text: SEPARATOR, notify: null, args: null}]);
+        G.call("st.player.ChatClient", "localReceiveMessage", null, [{channel: channel, sender: null, text: text, notify: null, args: null}]);
     }
 
     static function log(action:String, error:Dynamic):Void {
