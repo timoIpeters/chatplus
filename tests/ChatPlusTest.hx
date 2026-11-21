@@ -1,5 +1,4 @@
 import chatplus.ChatTime;
-import chatplus.Separators;
 import chatplus.Settings;
 
 class ChatPlusTest {
@@ -7,7 +6,6 @@ class ChatPlusTest {
 
     static function main():Void {
         chatTime();
-        separators();
         settings();
         if (failures > 0) {
             Sys.println(failures + " check(s) failed");
@@ -21,30 +19,6 @@ class ChatPlusTest {
         check("same moment", ChatTime.format(500, 500, now), "14:30");
         check("90 s earlier", ChatTime.format(410, 500, now), "14:28");
         check("leading zero", ChatTime.format(0, 0, new Date(2026, 0, 1, 7, 5, 0).getTime()), "07:05");
-    }
-
-    static function separators():Void {
-        var s = new Separators();
-        s.addSwitch(10);
-        s.startWindow();
-        check("first message never", s.before(5), false);
-        check("before the switch", s.before(8), false);
-        check("first after the switch", s.before(12), true);
-        check("second after the switch", s.before(13), false);
-
-        s.startWindow();
-        check("replay: first message never", s.before(5), false);
-        check("replay: first after the switch", s.before(12), true);
-
-        s.startWindow();
-        check("history starts after the switch", s.before(12), false);
-
-        s.addSwitch(20);
-        s.startWindow();
-        s.before(5);
-        check("two switches: first", s.before(12), true);
-        check("two switches: second", s.before(25), true);
-        check("message at the switch time counts as after", { s.startWindow(); s.before(15); s.before(20); }, true);
     }
 
     static function settings():Void {

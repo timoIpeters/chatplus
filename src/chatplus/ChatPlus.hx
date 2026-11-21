@@ -6,7 +6,7 @@ import sys.io.File;
 import chatplus.Game as G;
 
 /// Chat improvements: a timestamp in front of every player message, and chat history and whisper
-/// channels kept across a character switch. Options are in `hlx/mods/chat-plus/settings.json`.
+/// channels kept across a character switch, marked by a system line. Options are in `hlx/mods/chat-plus/settings.json`.
 @:build(hlx.runtime.Mod.build())
 class ChatPlus {
     static inline var SETTINGS_FILE = "hlx/mods/chat-plus/settings.json";
@@ -16,10 +16,8 @@ class ChatPlus {
     static inline var CHANNEL_SYSTEM_EVENT = 5;
 
     static var settings:Settings;
-    static var separators:Separators;
 
     static function main():Void {
-        separators = new Separators();
         settings = loadSettings();
     }
 
@@ -41,8 +39,9 @@ class ChatPlus {
     static function beforeResetHistory():HlxPrefixControl {
         if (!settings.keepHistory) return Continue;
         try {
-            trimHistory(settings.historyLimit);
-            separators.addSwitch(Sys.time());
+            var history = G.staticField("st.player.ChatClient", "history");
+            trimHistory(history, settings.historyLimit);
+            addSeparator(history);
         } catch (error:Dynamic) log("keeping the chat history", error);
         return Skip;
     }
@@ -51,12 +50,6 @@ class ChatPlus {
     @:hlx.prefix(ui.hud.ChatBox.resetChannels)
     static function beforeResetChannels():HlxPrefixControl {
         return settings.keepHistory ? Skip : Continue;
-    }
-
-    // Each scene builds a new chat window, which shows the whole history again from the first message.
-    @:hlx.postfix(ui.hud.ChatBox.init)
-    static function afterChatBoxInit(instance:Dynamic, result:Void):Void {
-        separators.startWindow();
     }
 
     @:hlx.postfix(ui.hud.ChatBoxMessage.init)
@@ -68,17 +61,12 @@ class ChatPlus {
         var message = G.field(line, "message");
         var stamp:Null<Float> = G.field(message, "localStamp");
         if (stamp == null) return;
-        var separator = separators.before(stamp) && settings.keepHistory;
         var channel = G.field(message, "channel");
         var channelIndex = Type.enumIndex(channel);
-        var prefix = "";
-        if (separator) prefix += withColor(SEPARATOR, "Chat_System") + "<br/>";
-        if (settings.timestamps && channelIndex != CHANNEL_SYSTEM && channelIndex != CHANNEL_SYSTEM_EVENT) {
-            var time = ChatTime.format(stamp, Sys.time(), Date.now().getTime());
-            var color:String = G.staticCall("ui.hud.ChatBoxMessage", "getChannelColor", [channel]);
-            prefix += withColor("[" + time + "] ", color);
-        }
-        if (prefix == "") return;
+        if (!settings.timestamps || channelIndex == CHANNEL_SYSTEM || channelIndex == CHANNEL_SYSTEM_EVENT) return;
+        var time = ChatTime.format(stamp, Sys.time(), Date.now().getTime());
+        var color:String = G.staticCall("ui.hud.ChatBoxMessage", "getChannelColor", [channel]);
+        var prefix = withColor("[" + time + "] ", color);
         var text = G.field(line, "msgText");
         var current:String = G.field(text, "prevUnformatted");
         G.call("ui.comp.FmtText", "set_text", text, [prefix + (current == null ? "" : current)]);
@@ -89,10 +77,23 @@ class ChatPlus {
     }
 
     // Runs while the character selection is open: no chat window reads the history then.
-    static function trimHistory(limit:Int):Void {
-        var history = G.staticField("st.player.ChatClient", "history");
+    static function trimHistory(history:Dynamic, limit:Int):Void {
         var extra = G.integer(G.field(history, "length")) - limit;
         if (extra > 0) G.call("hl.types.ArrayObj", "splice", history, [0, extra]);
+    }
+
+    // A system message, so every chat window shows it below the previous character's messages.
+    // Not added to an empty history (game start) or twice in a row (switching without chatting).
+    static function addSeparator(history:Dynamic):Void {
+        var count = G.integer(G.field(history, "length"));
+        if (count == 0) return;
+        var last = G.call("hl.types.ArrayObj", "getDyn", history, [count - 1]);
+        if (G.field(last, "text") == SEPARATOR) return;
+        var channelType = HlxRuntime.resolveType("st.Channel");
+        if (channelType == null) throw "Game type unavailable: st.Channel";
+        var channel = HlxRuntime.constructEnum(channelType, "System", [null]);
+        // localReceiveMessage only stamps the message and appends it to the static history; it never reads `this`.
+        G.call("st.player.ChatClient", "localReceiveMessage", null, [{channel: channel, sender: null, text: SEPARATOR, notify: null, args: null}]);
     }
 
     static function log(action:String, error:Dynamic):Void {
