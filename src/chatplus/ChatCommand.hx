@@ -19,6 +19,7 @@ class ChatCommands {
         "/p, /party, /gr, /group <msg> - Group channel",
         "/s, /say <msg> - Local channel",
         "/r <msg> - reply to the last whisper",
+        "Tab, Shift+Tab - switch channel while typing",
         "/w, /whisper, /tell <name> [msg] - whisper to a player",
         "/invite, /inv <name> - invite a player to your group",
         "/leave - leave your group",

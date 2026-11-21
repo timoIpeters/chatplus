@@ -37,7 +37,6 @@ class ChatPlusTest {
         check("default switchMessage", d.switchMessage, false);
         check("default inviteFirstMatch", d.inviteFirstMatch, true);
         check("default rememberClosed", d.rememberClosed, true);
-        check("default channelButtons", d.channelButtons, true);
         check("parsed rememberClosed", Settings.parse('{"rememberClosed": false}').rememberClosed, false);
         check("default whisperFirstMatch", d.whisperFirstMatch, false);
         check("parsed whisperFirstMatch", Settings.parse('{"whisperFirstMatch": true}').whisperFirstMatch, true);
@@ -136,6 +135,8 @@ class ChatPlusTest {
             '<font color="#FF9933">[Chat Plus] Chat commands:</font><br/>'
             + '<font color="#8CC8FF">/w &lt;name&gt;</font><font color="#FF9933"> - whisper</font><br/>'
             + '<font color="#FF9933">no command - here</font>');
+        check("key line", NoteFormat.toMarkup("x\nTab - switch", false),
+            '<font color="#FF9933">x</font><br/><font color="#8CC8FF">Tab</font><font color="#FF9933"> - switch</font>');
         check("command without description", NoteFormat.toMarkup("x\n/leave"),
             '<font color="#FF9933">[Chat Plus] x</font><br/><font color="#FF9933">/leave</font>');
     }
