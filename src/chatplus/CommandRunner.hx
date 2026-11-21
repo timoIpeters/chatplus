@@ -10,8 +10,12 @@ import chatplus.Game as G;
 class CommandRunner {
     // The last candidate list shown per name (lower case), for `Name:N`.
     static var lastLists:Map<String, Array<Sighting>> = [];
+    // A whisper held back while its recipient is picked, per name (lower case).
+    static var heldWhispers:Map<String, String> = [];
 
     final chat:Dynamic;
+    // Set by `find` when it showed a list instead of picking a player.
+    var listed = false;
     final player:Dynamic;
 
     public function new(chat:Dynamic) {
@@ -33,8 +37,16 @@ class CommandRunner {
     }
 
     function whisper(name:String, message:String):String {
-        var target = find(name, "/w");
-        if (target == null) return "";
+        var query = PlayerLookup.parseQuery(name);
+        var key = query.name.toLowerCase();
+        if (query.pick == null) heldWhispers.remove(key);
+        else if (message == "" && heldWhispers.exists(key)) message = heldWhispers.get(key);
+        var target = find(name, "/w", ChatPlus.settings.whisperFirstMatch);
+        if (target == null) {
+            if (listed && message != "") heldWhispers.set(key, message);
+            return "";
+        }
+        heldWhispers.remove(key);
         var channelType = HlxRuntime.resolveType("st.Channel");
         if (channelType == null) throw "Game type unavailable: st.Channel";
         // Same channel as "Send message" in the player menu: it is added to the dropdown and selected.
@@ -45,7 +57,7 @@ class CommandRunner {
 
     // Same calls as "Invite to group" in the player menu (GameUI.openPlayerInteractionMenu).
     function invite(name:String):String {
-        var target = find(name, "/invite");
+        var target = find(name, "/invite", ChatPlus.settings.inviteFirstMatch);
         if (target == null) return "";
         var group = G.field(player, "group");
         for (member in G.elements(G.field(group, "players"))) {
@@ -66,9 +78,9 @@ class CommandRunner {
         return "";
     }
 
-    /// The player meant by `text` (`Name` or `Name:N`), or null after showing an error. With several
-    /// accounts of that name it takes the first and lists all, each line right-clickable.
-    function find(text:String, command:String):Null<Sighting> {
+    /// The player meant by `text` (`Name` or `Name:N`), or null after showing an error or a list. With several
+    /// accounts of that name it lists all, each line right-clickable, and takes the first when `actOnFirst`.
+    function find(text:String, command:String, actOnFirst:Bool):Null<Sighting> {
         var query = PlayerLookup.parseQuery(text);
         var key = query.name.toLowerCase();
         if (query.pick != null) {
@@ -87,19 +99,23 @@ class CommandRunner {
             error("Unknown player " + query.name + ": only players you have seen on your map, in your group, in your friend list or in chat can be found");
             return null;
         }
-        if (found.length > 1) showChoices(query.name, found, command);
-        return found[0];
+        if (found.length == 1) return found[0];
+        showChoices(query.name, found, command, actOnFirst);
+        return actOnFirst ? found[0] : null;
     }
 
-    function showChoices(name:String, found:Array<Sighting>, command:String):Void {
+    function showChoices(name:String, found:Array<Sighting>, command:String, actOnFirst:Bool):Void {
         lastLists.set(name.toLowerCase(), found);
+        listed = !actOnFirst;
         var now = Date.now().getTime();
-        info(found.length + " players named " + name + ", using 1:");
+        info(found.length + " players named " + name + (actOnFirst ? ", using 1:" : ", pick one:"));
         for (i in 0...found.length) {
             var s = found[i];
             ChatPlus.addSystemMessage((i + 1) + ") " + s.name + " - " + PlayerLookup.describe(s, now), true, false, {name: s.name, uid: s.uid});
         }
-        ChatPlus.addSystemMessage("Pick another: " + command + " " + name + ":2, or right-click a line", true, false);
+        var hint = actOnFirst ? "Pick another: " + command + " " + name + ":2" : "Pick: " + command + " " + name + ":1";
+        if (!actOnFirst && command == "/w") hint += " (sends your message)";
+        ChatPlus.addSystemMessage(hint + ", or right-click a line", true, false);
     }
 
     function error(text:String):String {

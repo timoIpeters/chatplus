@@ -25,7 +25,7 @@ class ChatPlus {
     static inline var PLAIN_MARK = "chatPlus";
     static inline var NO_PREFIX_MARK = "noPrefix";
 
-    static var settings:Settings;
+    public static var settings:Settings;
     /// Players seen this session, and in earlier sessions when `rememberPlayers` is on.
     public static var book:PlayerBook;
     static var bookDirty = false;

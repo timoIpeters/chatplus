@@ -35,6 +35,9 @@ class ChatPlusTest {
         check("default keepHistory", d.keepHistory, true);
         check("default historyLimit", d.historyLimit, 500);
         check("default switchMessage", d.switchMessage, false);
+        check("default inviteFirstMatch", d.inviteFirstMatch, true);
+        check("default whisperFirstMatch", d.whisperFirstMatch, false);
+        check("parsed whisperFirstMatch", Settings.parse('{"whisperFirstMatch": true}').whisperFirstMatch, true);
         check("parsed switchMessage", Settings.parse('{"switchMessage": true}').switchMessage, true);
 
         var s = Settings.parse('{"timestamps": false, "historyLimit": 50}');
