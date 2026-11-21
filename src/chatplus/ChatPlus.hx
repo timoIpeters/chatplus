@@ -33,6 +33,7 @@ class ChatPlus {
     // Field in `args` of the mod's own system messages. The game reads `args` only for `notify` messages.
     static inline var PLAIN_MARK = "chatPlus";
     static inline var NO_PREFIX_MARK = "noPrefix";
+    static inline var ERROR_MARK = "error";
     static inline var MINIMIZED = "minimized";
 
     public static var settings:Settings;
@@ -42,12 +43,43 @@ class ChatPlus {
     // The chat window of the previous scene, to carry its closed state over to the next one.
     static var previousChat:Dynamic;
     static var bookSaved = 0.0;
+    // Error notes wait here until the first chat window exists; each kind of error is shown once per session.
+    static var pendingErrors:Array<String> = [];
+    static var reportedErrors:Map<String, Bool> = [];
+    static var chatReady = false;
+    static var flushing = false;
 
     static function main():Void {
         settings = loadSettings();
         book = loadBook();
         writeFormats();
         hlx.runtime.Bus.subscribe(CONFIG_CHANGED + MOD_NAME, onConfigChanged);
+        checkGame();
+    }
+
+    // Reflection works in main() (hlx-core 0.0.11), so a renamed game function is found before it is needed.
+    static function checkGame():Void {
+        try {
+            var missing = GameCheck.missing(Game.exists);
+            for (r in missing) trace("[ChatPlus] game element not found: " + GameCheck.name(r) + " (" + r.feature + ")");
+            var note = GameCheck.report(missing);
+            if (note != null) showError(note);
+        } catch (error:Dynamic) log("checking the game", error);
+    }
+
+    static function showError(text:String):Void {
+        if (!settings.showErrors) return;
+        pendingErrors.push(text);
+        flushErrors();
+    }
+
+    static function flushErrors():Void {
+        if (!chatReady || flushing) return;
+        flushing = true;
+        try {
+            while (pendingErrors.length > 0) addSystemMessage(pendingErrors.shift(), true, true, null, true);
+        } catch (error:Dynamic) trace("[ChatPlus] error while showing an error in the chat: " + Std.string(error));
+        flushing = false;
     }
 
     static function onConfigChanged(payload:Dynamic):Void {
@@ -144,6 +176,8 @@ class ChatPlus {
     // and it is a good moment to note the players around.
     @:hlx.postfix(ui.hud.ChatBox.init)
     static function afterChatBoxInit(instance:Dynamic, result:Void):Void {
+        chatReady = true;
+        flushErrors();
         try keepClosed(instance) catch (error:Dynamic) log("keeping the chat closed", error);
         previousChat = instance;
         try {
@@ -185,7 +219,7 @@ class ChatPlus {
         if (G.field(args, PLAIN_MARK) == true) {
             // The mod's own notes: no "[HH:MM] [System]" header, own colors and prefix (NoteFormat).
             var note:String = G.field(message, "text");
-            G.call("ui.comp.FmtText", "set_text", text, [NoteFormat.toMarkup(note, G.field(args, NO_PREFIX_MARK) != true)]);
+            G.call("ui.comp.FmtText", "set_text", text, [NoteFormat.toMarkup(note, G.field(args, NO_PREFIX_MARK) != true, G.field(args, ERROR_MARK) == true)]);
             return;
         }
         var channel = G.field(message, "channel");
@@ -221,15 +255,19 @@ class ChatPlus {
     /// Adds a system message to the chat history; every chat window shows it. A `plain` message is
     /// one of the mod's notes: shown by `NoteFormat` instead of the `[HH:MM] [System]` header, and may span several lines (`\n`).
     /// With `sender`, right-clicking the line opens the game's player menu for that account.
-    public static function addSystemMessage(text:String, plain = false, prefix = true, ?sender:{name:String, uid:String}):Void {
+    public static function addSystemMessage(text:String, plain = false, prefix = true, ?sender:{name:String, uid:String}, error = false):Void {
         var channelType = HlxRuntime.resolveType("st.Channel");
         if (channelType == null) throw "Game type unavailable: st.Channel";
         var channel = HlxRuntime.constructEnum(channelType, "System", [null]);
         // localReceiveMessage only stamps the message and appends it to the static history; it never reads `this`.
-        G.call("st.player.ChatClient", "localReceiveMessage", null, [{channel: channel, sender: sender, text: text, notify: null, args: plain ? {chatPlus: true, noPrefix: !prefix} : null}]);
+        G.call("st.player.ChatClient", "localReceiveMessage", null, [{channel: channel, sender: sender, text: text, notify: null, args: plain ? {chatPlus: true, noPrefix: !prefix, error: error} : null}]);
     }
 
-    static function log(action:String, error:Dynamic):Void {
+    /// Writes the error to `hlx.log`, and once per kind of error to the chat when `showErrors` is on.
+    public static function log(action:String, error:Dynamic):Void {
         trace("[ChatPlus] error while " + action + ": " + Std.string(error));
+        if (settings == null || reportedErrors.exists(action)) return;
+        reportedErrors.set(action, true);
+        showError("Error while " + action + ": " + Std.string(error));
     }
 }

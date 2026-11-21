@@ -57,4 +57,15 @@ class Game {
         var count = integer(field(array, "length"));
         return [for (i in 0...count) call(type, "getDyn", array, [i])];
     }
+
+    /// Whether the game has the type or function `r` names.
+    public static function exists(r:GameCheck.Requirement):Bool {
+        var t = HlxRuntime.resolveType(r.type);
+        if (t == null) return false;
+        return switch (r.kind) {
+            case Type: true;
+            case Method: HlxRuntime.resolveMember(t, r.member) != null;
+            case StaticMethod: HlxRuntime.resolveStaticMember(t, r.member) != null;
+        }
+    }
 }

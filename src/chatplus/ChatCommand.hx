@@ -7,6 +7,8 @@ enum ChatCommand {
     Invite(name:String);
     Leave;
     Help;
+    /// `/chatplus`: check the game elements the mod uses.
+    Check;
     /// A mod command used wrongly; the text says how to use it.
     Usage(text:String);
 }
@@ -23,6 +25,7 @@ class ChatCommands {
         "/w, /whisper, /tell <name> [msg] - whisper to a player",
         "/invite, /inv <name> - invite a player to your group",
         "/leave - leave your group",
+        "/chatplus - check that the game still has everything the mod uses",
         "/help - this list",
     ];
 
@@ -38,6 +41,8 @@ class ChatCommands {
                 Leave;
             case "help", "?":
                 Help;
+            case "chatplus":
+                Check;
             default:
                 null;
         }

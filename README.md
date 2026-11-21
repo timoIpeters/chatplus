@@ -12,6 +12,7 @@ An HLX mod for Farever that improves the chat.
   | `/invite`, `/inv <name>` | Group invite, like the player menu |
   | `/leave` | Leaves your group |
   | `/help` | Lists all chat commands |
+  | `/chatplus` | Checks that the game still has everything the mod uses (after a game update) |
 
   Names are found, ignoring case, among players on your map, in your group, your friends, and an address book of every player the mod has seen (chat senders, whisper partners, group members, players on your map), kept across restarts in `hlx\mods\chat-plus\players.json`.
 
@@ -21,6 +22,10 @@ An HLX mod for Farever that improves the chat.
 
 - `/help` also shows the game's channel keys: Tab and Shift+Tab while typing cycle All, Group, Local and whispers. The game's options don't list them.
 
+
+## After a game update
+
+At every start the mod checks that the game still has the functions it uses. Missing ones are listed in the chat as red `[Chat Plus]` lines with the feature that stops working; other errors appear the same way, each kind once per session. Type `/chatplus` to run the check yourself. Everything is also written to `hlx\logs\hlx.log`.
 
 ## Settings
 
@@ -37,6 +42,7 @@ The values are stored in `<Farever folder>\hlx\config\chat-plus\config.json` (HL
 | `rememberPlayers` | `true` | Keep the address book of seen players across game restarts |
 | `inviteFirstMatch` | `true` | `/invite` with a shared name invites the best match right away |
 | `whisperFirstMatch` | `false` | `/w` with a shared name whispers the best match right away; off: list first, message kept until you pick |
+| `showErrors` | `true` | Red `[Chat Plus]` lines in the chat for missing game elements and errors (always in `hlx\logs\hlx.log`) |
 | `historyLimit` | `500` | Most messages kept at a character switch (100–2000) |
 
 ## Build

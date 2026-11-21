@@ -8,12 +8,17 @@ using StringTools;
 class NoteFormat {
     public static inline var ORANGE = "#FF9933";
     public static inline var LIGHT_BLUE = "#8CC8FF";
+    public static inline var RED = "#E8604C";
     public static inline var PREFIX = "[Chat Plus] ";
     static inline var COMMAND_SEPARATOR = " - ";
 
-    public static function toMarkup(text:String, withPrefix = true):String {
+    /// `error` notes are red throughout.
+    public static function toMarkup(text:String, withPrefix = true, error = false):String {
         var lines = text.split("\n");
-        var out = [for (i in 0...lines.length) line(i == 0 && withPrefix ? PREFIX + lines[i] : lines[i])];
+        var out = [for (i in 0...lines.length) {
+            var t = i == 0 && withPrefix ? PREFIX + lines[i] : lines[i];
+            error ? color(t, RED) : line(t);
+        }];
         return out.join("<br/>");
     }
 

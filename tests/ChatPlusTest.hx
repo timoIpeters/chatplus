@@ -1,5 +1,6 @@
 import chatplus.ChatCommand;
 import chatplus.ChatTime;
+import chatplus.GameCheck;
 import chatplus.NoteFormat;
 import chatplus.PlayerBook;
 import chatplus.PlayerLookup;
@@ -15,6 +16,7 @@ class ChatPlusTest {
         playerBook();
         playerLookup();
         noteFormat();
+        gameCheck();
         if (failures > 0) {
             Sys.println(failures + " check(s) failed");
             Sys.exit(1);
@@ -37,6 +39,7 @@ class ChatPlusTest {
         check("default switchMessage", d.switchMessage, false);
         check("default inviteFirstMatch", d.inviteFirstMatch, true);
         check("default rememberClosed", d.rememberClosed, true);
+        check("default showErrors", d.showErrors, true);
         check("parsed rememberClosed", Settings.parse('{"rememberClosed": false}').rememberClosed, false);
         check("default whisperFirstMatch", d.whisperFirstMatch, false);
         check("parsed whisperFirstMatch", Settings.parse('{"whisperFirstMatch": true}').whisperFirstMatch, true);
@@ -85,6 +88,7 @@ class ChatPlusTest {
         check("invite without name", Std.string(ChatCommands.parse("invite", [""])), "Usage(Usage: /invite <name>)");
         check("leave", Std.string(ChatCommands.parse("leave", [])), "Leave");
         check("help", Std.string(ChatCommands.parse("help", [])), "Help");
+        check("chatplus", Std.string(ChatCommands.parse("chatplus", [])), "Check");
         check("game command stays with the game", ChatCommands.parse("p", ["hi"]), null);
         check("unknown command stays with the game", ChatCommands.parse("dance", []), null);
     }
@@ -152,8 +156,20 @@ class ChatPlusTest {
             + '<font color="#FF9933">no command - here</font>');
         check("key line", NoteFormat.toMarkup("x\nTab - switch", false),
             '<font color="#FF9933">x</font><br/><font color="#8CC8FF">Tab</font><font color="#FF9933"> - switch</font>');
+        check("error note", NoteFormat.toMarkup("Error while x: y\n/w - z", true, true),
+            '<font color="#E8604C">[Chat Plus] Error while x: y</font><br/><font color="#E8604C">/w - z</font>');
         check("command without description", NoteFormat.toMarkup("x\n/leave"),
             '<font color="#FF9933">[Chat Plus] x</font><br/><font color="#FF9933">/leave</font>');
+    }
+
+    static function gameCheck():Void {
+        check("nothing missing", GameCheck.report(GameCheck.missing(_ -> true)), null);
+        var gone = GameCheck.missing(r -> r.member != "handleCommand" && r.type != "st.Channel");
+        check("missing ones found", [for (r in gone) GameCheck.name(r)].join(","), "ui.hud.ChatBox.handleCommand,st.Channel");
+        check("report", GameCheck.report(gone),
+            "Game elements not found (game update?), these features may not work:\nui.hud.ChatBox.handleCommand - chat commands\nst.Channel - mod messages, /w");
+        check("static name", GameCheck.name({type: "HText", member: "withColor", kind: StaticMethod, feature: ""}), "HText::withColor");
+        check("every requirement but types names a member", [for (r in GameCheck.REQUIRED) if ((r.member == null) != (r.kind == Type)) GameCheck.name(r)].length, 0);
     }
 
     static function check(name:String, actual:Dynamic, expected:Dynamic):Void {

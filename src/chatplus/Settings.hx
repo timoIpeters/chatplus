@@ -16,6 +16,7 @@ class Settings {
         {key: "rememberPlayers", label: "Remember players across restarts", tooltip: "/w and /invite find players you met in earlier sessions. Stored in hlx/mods/chat-plus/players.json."},
         {key: "inviteFirstMatch", label: "Auto-pick shared names for /invite", tooltip: "If several players have the name, invite the most likely one. Off: pick from a list first."},
         {key: "whisperFirstMatch", label: "Auto-pick shared names for /w", tooltip: "If several players have the name, whisper the most likely one. Off: pick from a list first."},
+        {key: "showErrors", label: "Show mod errors in the chat", tooltip: "Red [Chat Plus] lines when something of the game the mod uses is missing (e.g. after a game update) or the mod hits an error. Always written to hlx/logs/hlx.log."},
     ];
     public static inline var HISTORY_MIN = 100;
     public static inline var HISTORY_MAX = 2000;
@@ -35,6 +36,8 @@ class Settings {
     public var inviteFirstMatch = true;
     /// `/w` with a name several accounts share: whisper the best match right away. Off: list them and keep the message until one is picked.
     public var whisperFirstMatch = false;
+    /// Red chat lines for missing game elements and runtime errors (always in `hlx.log`).
+    public var showErrors = true;
     /// Most messages kept across a character switch; older ones are dropped at the switch.
     public var historyLimit = 500;
 

@@ -32,6 +32,11 @@ class CommandRunner {
             case Help:
                 info(ChatCommands.HELP.join("\n"));
                 "";
+            case Check:
+                var report = GameCheck.report(GameCheck.missing(Game.exists));
+                if (report == null) info("All " + GameCheck.REQUIRED.length + " game elements the mod uses were found.");
+                else ChatPlus.addSystemMessage(report, true, true, null, true);
+                "";
             case Usage(text): error(text);
         }
     }
