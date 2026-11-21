@@ -85,7 +85,7 @@ class ChatPlus {
     }
 
     static function withColor(text:String, color:String):String {
-        return G.staticCall("const.HText", "withColor", [text, color]);
+        return G.staticCall("HText", "withColor", [text, color]);
     }
 
     // Runs while the character selection is open: no chat window reads the history then.
