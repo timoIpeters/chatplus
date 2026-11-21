@@ -29,6 +29,10 @@ class CommandRunner {
             case Whisper(name, message): whisper(name, message);
             case Invite(name): invite(name);
             case Leave: leave();
+            case Ignore(name): ignore(name);
+            case IgnoreList: ignoreList();
+            case Unignore(name): unignore(name);
+            case Friend(name): friend(name);
             case Help:
                 info(ChatCommands.HELP.join("\n"));
                 "";
@@ -73,6 +77,50 @@ class CommandRunner {
         if (Type.enumConstructor(reason) != "Ok") return error(G.staticCall("HText", "reason", [reason]));
         G.call("st.player.Whispers", "sendInviteGroup", G.field(player, "whispers"), [target.uid]);
         info("Group invite sent to " + target.name);
+        return "";
+    }
+
+    // Same calls as "Ignore" / "Unignore" / "Add friend" in the player menu. A shared name is never
+    // acted on directly: ignoring or befriending the wrong player needs an explicit pick.
+    function ignore(name:String):String {
+        var target = find(name, "/ignore", false);
+        if (target == null) return "";
+        if (G.call("st.Player", "isIgnoring", player, [target.uid]) == true) return error(target.name + " is already ignored");
+        G.call("st.Player", "ignorePlayer", player, [target.uid, target.name, true]);
+        info("Ignoring " + target.name + ". /unignore " + target.name + " to undo");
+        return "";
+    }
+
+    function ignoreList():String {
+        var names = [for (e in ignored()) e.name];
+        info(names.length == 0 ? "You are not ignoring anyone." : "Ignored players: " + names.join(", "));
+        return "";
+    }
+
+    // Searched in the ignore list itself: ignored players' messages are hidden, so the address book may not know them.
+    function unignore(name:String):String {
+        var key = name.toLowerCase();
+        var matches = [for (e in ignored()) if (e.name != null && e.name.toLowerCase() == key) e];
+        if (matches.length == 0) return error(name + " is not on your ignore list");
+        for (e in matches) G.call("st.Player", "ignorePlayer", player, [e.uid, null, false]);
+        info(matches.length == 1 ? "No longer ignoring " + matches[0].name : "No longer ignoring " + matches.length + " players named " + matches[0].name);
+        return "";
+    }
+
+    function ignored():Array<{name:String, uid:String}> {
+        var list = G.field(G.field(G.field(player, "accountProgress"), "social"), "ignoreList");
+        return [for (e in G.elements(list)) {name: G.field(e, "name"), uid: G.field(e, "uid")}];
+    }
+
+    function friend(name:String):String {
+        var target = find(name, "/friend", false);
+        if (target == null) return "";
+        var friends = G.field(player, "friendList");
+        if (G.call("st.FriendList", "isFriend", friends, [target.uid]) == true) return error(target.name + " is already your friend");
+        var targetName = target.name;
+        var reason = G.call("st.FriendList", "addFriend", friends, [target.uid, (ok:Bool) -> if (!ok) ChatPlus.addSystemMessage("Friend request to " + targetName + " failed", true, true, null, true)]);
+        if (Type.enumConstructor(reason) != "Ok") return error(G.staticCall("HText", "reason", [reason]));
+        info("Friend request sent to " + targetName);
         return "";
     }
 

@@ -6,6 +6,11 @@ enum ChatCommand {
     Whisper(name:String, message:String);
     Invite(name:String);
     Leave;
+    Ignore(name:String);
+    /// `/ignore` without a name: list the ignored players.
+    IgnoreList;
+    Unignore(name:String);
+    Friend(name:String);
     Help;
     /// `/chatplus`: check the game elements the mod uses.
     Check;
@@ -25,6 +30,9 @@ class ChatCommands {
         "/w, /whisper, /tell <name> [msg] - whisper to a player",
         "/invite, /inv <name> - invite a player to your group",
         "/leave - leave your group",
+        "/ignore <name> - ignore a player; /ignore lists the ignored players",
+        "/unignore <name> - stop ignoring a player",
+        "/friend <name> - send a friend request",
         "/chatplus - check that the game still has everything the mod uses",
         "/help - this list",
     ];
@@ -39,6 +47,12 @@ class ChatCommands {
                 words.length == 0 ? Usage("Usage: /invite <name>") : Invite(words[0]);
             case "leave":
                 Leave;
+            case "ignore":
+                words.length == 0 ? IgnoreList : Ignore(words[0]);
+            case "unignore":
+                words.length == 0 ? Usage("Usage: /unignore <name>") : Unignore(words[0]);
+            case "friend", "addfriend":
+                words.length == 0 ? Usage("Usage: /friend <name>") : Friend(words[0]);
             case "help", "?":
                 Help;
             case "chatplus":

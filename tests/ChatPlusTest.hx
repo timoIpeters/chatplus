@@ -100,6 +100,12 @@ class ChatPlusTest {
         check("inv alias", Std.string(ChatCommands.parse("inv", ["Bob", "extra"])), "Invite(Bob)");
         check("invite without name", Std.string(ChatCommands.parse("invite", [""])), "Usage(Usage: /invite <name>)");
         check("leave", Std.string(ChatCommands.parse("leave", [])), "Leave");
+        check("ignore", Std.string(ChatCommands.parse("ignore", ["Bob"])), "Ignore(Bob)");
+        check("ignore without name lists", Std.string(ChatCommands.parse("ignore", [])), "IgnoreList");
+        check("unignore", Std.string(ChatCommands.parse("unignore", ["Bob"])), "Unignore(Bob)");
+        check("unignore without name", Std.string(ChatCommands.parse("unignore", [])), "Usage(Usage: /unignore <name>)");
+        check("friend", Std.string(ChatCommands.parse("friend", ["Bob"])), "Friend(Bob)");
+        check("addfriend alias", Std.string(ChatCommands.parse("addfriend", ["Bob"])), "Friend(Bob)");
         check("help", Std.string(ChatCommands.parse("help", [])), "Help");
         check("chatplus", Std.string(ChatCommands.parse("chatplus", [])), "Check");
         check("game command stays with the game", ChatCommands.parse("p", ["hi"]), null);

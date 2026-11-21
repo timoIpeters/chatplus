@@ -11,6 +11,9 @@ An HLX mod for Farever that improves the chat.
   | `/w`, `/whisper`, `/tell <name> [message]` | Opens a whisper channel with the player and sends the message |
   | `/invite`, `/inv <name>` | Group invite, like the player menu |
   | `/leave` | Leaves your group |
+  | `/ignore <name>` | Ignores a player, like the player menu. `/ignore` alone lists the ignored players |
+  | `/unignore <name>` | Stops ignoring a player (searched in your ignore list) |
+  | `/friend`, `/addfriend <name>` | Sends a friend request |
   | `/help` | Lists all chat commands |
   | `/chatplus` | Checks that the game still has everything the mod uses (after a game update) |
 
