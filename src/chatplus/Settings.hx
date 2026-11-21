@@ -10,6 +10,8 @@ class Settings {
     public var keepHistory = true;
     /// System line `------ character switch ------` in the chat at each character switch (needs `keepHistory`).
     public var switchMessage = false;
+    /// A chat closed with its minimize button stays closed in the next scene.
+    public var rememberClosed = true;
     /// Keep the address book of seen players (`players.json`) across game restarts, for `/w` and `/invite`.
     public var rememberPlayers = true;
     /// `/invite` with a name several accounts share: invite the best match right away (and list all).
@@ -28,6 +30,7 @@ class Settings {
         if (Std.isOfType(data.timestamps, Bool)) s.timestamps = data.timestamps;
         if (Std.isOfType(data.keepHistory, Bool)) s.keepHistory = data.keepHistory;
         if (Std.isOfType(data.switchMessage, Bool)) s.switchMessage = data.switchMessage;
+        if (Std.isOfType(data.rememberClosed, Bool)) s.rememberClosed = data.rememberClosed;
         if (Std.isOfType(data.rememberPlayers, Bool)) s.rememberPlayers = data.rememberPlayers;
         if (Std.isOfType(data.inviteFirstMatch, Bool)) s.inviteFirstMatch = data.inviteFirstMatch;
         if (Std.isOfType(data.whisperFirstMatch, Bool)) s.whisperFirstMatch = data.whisperFirstMatch;
@@ -36,7 +39,7 @@ class Settings {
     }
 
     public function toJson():String {
-        return Json.stringify({timestamps: timestamps, keepHistory: keepHistory, switchMessage: switchMessage, rememberPlayers: rememberPlayers,
+        return Json.stringify({timestamps: timestamps, keepHistory: keepHistory, switchMessage: switchMessage, rememberClosed: rememberClosed, rememberPlayers: rememberPlayers,
             inviteFirstMatch: inviteFirstMatch, whisperFirstMatch: whisperFirstMatch, historyLimit: historyLimit}, null, "  ");
     }
 }

@@ -24,11 +24,14 @@ class ChatPlus {
     // Field in `args` of the mod's own system messages. The game reads `args` only for `notify` messages.
     static inline var PLAIN_MARK = "chatPlus";
     static inline var NO_PREFIX_MARK = "noPrefix";
+    static inline var MINIMIZED = "minimized";
 
     public static var settings:Settings;
     /// Players seen this session, and in earlier sessions when `rememberPlayers` is on.
     public static var book:PlayerBook;
     static var bookDirty = false;
+    // The chat window of the previous scene, to carry its closed state over to the next one.
+    static var previousChat:Dynamic;
     static var bookSaved = 0.0;
 
     static function main():Void {
@@ -108,9 +111,12 @@ class ChatPlus {
         }
     }
 
-    // Every scene builds a new chat window: a good moment to note the players around.
+    // Every scene builds a new chat window: it takes over the closed state of the previous one,
+    // and it is a good moment to note the players around.
     @:hlx.postfix(ui.hud.ChatBox.init)
     static function afterChatBoxInit(instance:Dynamic, result:Void):Void {
+        try keepClosed(instance) catch (error:Dynamic) log("keeping the chat closed", error);
+        previousChat = instance;
         try {
             var player = G.call("ui.BaseElement", "get_myPlayer", instance);
             if (player == null) return;
@@ -126,6 +132,14 @@ class ChatPlus {
             if (G.field(G.field(message, "args"), PLAIN_MARK) == true) return;
             remember(LivePlayers.fromMessage(message, Date.now().getTime()));
         } catch (error:Dynamic) log("noting a chat sender", error);
+    }
+
+    // The minimize button toggles the CSS class "minimized"; focusing the input (Enter) removes it.
+    // The old window's class is its state at the scene change, however it was reached.
+    static function keepClosed(chat:Dynamic):Void {
+        if (!settings.rememberClosed || previousChat == null) return;
+        if (G.call("domkit.Properties", "hasClass", G.field(previousChat, "dom"), [MINIMIZED]) == true)
+            G.call("domkit.Properties", "toggleClass", G.field(chat, "dom"), [MINIMIZED, true]);
     }
 
     @:hlx.postfix(ui.hud.ChatBoxMessage.init)

@@ -17,7 +17,9 @@ An HLX mod for Farever that improves the chat.
 
   Character names are not unique. When several accounts match, the mod uses the best match (map, then group, then friends, then the most recently seen) and lists all of them: right-click a line for the game's player menu, or type `/invite Senix:2`. By default `/invite` invites the best match right away, while `/w` only lists the players and keeps your message until you pick one (`/w Senix:2` sends it); both can be changed (`inviteFirstMatch`, `whisperFirstMatch`).
 
-Planned: the chat remembering that it was closed, channel buttons and a channel hotkey, a settings panel next to the chat's close button.
+- A chat you closed with its minimize button stays closed when you change scene (dungeon, map, character switch). Pressing Enter or clicking it opens it as before.
+
+Planned: channel buttons and a channel hotkey, a settings panel next to the chat's close button.
 
 ## Settings
 
@@ -28,6 +30,7 @@ Planned: the chat remembering that it was closed, channel buttons and a channel 
 | `timestamps` | `true` | Time in front of player messages |
 | `keepHistory` | `true` | Keep messages and whisper channels across a character switch |
 | `switchMessage` | `false` | System line at each character switch (needs `keepHistory`) |
+| `rememberClosed` | `true` | A closed chat stays closed in the next scene |
 | `rememberPlayers` | `true` | Keep the address book of seen players across game restarts |
 | `inviteFirstMatch` | `true` | `/invite` with a shared name invites the best match right away |
 | `whisperFirstMatch` | `false` | `/w` with a shared name whispers the best match right away; off: list first, message kept until you pick |
