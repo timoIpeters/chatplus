@@ -7,3 +7,4 @@ An HLX mod that improves the Farever chat: timestamps, history kept across chara
 - Release: set the version in `src/chatplus/Version.hx`, run `./release.sh` (tests, build, `configFormats.json` via `formats.hxml`, zip) → `build/release/chat-plus-<version>.zip` with `hlx/mods/chat-plus/` inside. Steps in `AUDITLOG.md` D30.
 - Logic that doesn't touch the game (time formatting, settings, texts, command parsing, player lookup, chat size) lives in its own classes and is tested in `tests/`.
 - Features that can only be checked in the game get a section in `TESTABLE.md`. The user tests them on the PC.
+- `AUDITLOG.md` and `TESTABLE.md` are internal dev logs: keep them up to date locally, but never commit them (they are not in the `.gitignore` whitelist).
