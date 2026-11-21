@@ -74,6 +74,8 @@ class ChatPlusTest {
         check("wrong type keeps default", bad.timestamps, true);
         check("invalid limit keeps default", bad.historyLimit, 500);
 
+        check("complete file", Settings.incomplete(new Settings().toJson()), false);
+        check("file from an older version", Settings.incomplete('{"timestamps": true, "historyLimit": 500}'), true);
         var round = Settings.parse(s.toJson());
         check("round trip", round.timestamps + "," + round.keepHistory + "," + round.switchMessage + "," + round.historyLimit, "false,true,false,50");
 

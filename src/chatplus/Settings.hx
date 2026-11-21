@@ -88,6 +88,15 @@ class Settings {
         return s;
     }
 
+    /// Whether `json` lacks one of the keys `toJson` writes. Better Mod Settings shows a missing key as off,
+    /// while the mod uses its default, so such a file is written back complete.
+    public static function incomplete(json:String):Bool {
+        var data:Dynamic = Json.parse(json);
+        var saved:Dynamic = Json.parse(new Settings().toJson());
+        for (key in Reflect.fields(saved)) if (!Reflect.hasField(data, key)) return true;
+        return false;
+    }
+
     /// The settings page for Better Mod Settings (`configFormats.json` in the mod folder).
     public static function formatsJson():String {
         var configs:Array<Dynamic> = [{type: "title", label: "Chat"}];

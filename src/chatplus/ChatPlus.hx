@@ -136,7 +136,13 @@ class ChatPlus {
 
     static function loadSettings():Settings {
         try {
-            if (FileSystem.exists(SETTINGS_FILE)) return Settings.parse(File.getContent(SETTINGS_FILE));
+            if (FileSystem.exists(SETTINGS_FILE)) {
+                var json = File.getContent(SETTINGS_FILE);
+                var loaded = Settings.parse(json);
+                // Options added by a newer version get their default written into the file.
+                if (Settings.incomplete(json)) File.saveContent(SETTINGS_FILE, loaded.toJson());
+                return loaded;
+            }
             // Written once, from the old location if there is one, so Better Mod Settings shows the current values.
             var initial = FileSystem.exists(OLD_SETTINGS_FILE) ? Settings.parse(File.getContent(OLD_SETTINGS_FILE)) : new Settings();
             FileSystem.createDirectory(haxe.io.Path.directory(SETTINGS_FILE));
