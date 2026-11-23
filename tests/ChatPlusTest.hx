@@ -194,6 +194,9 @@ class ChatPlusTest {
             '<font color="#FF9933">x</font><br/><font color="#8CC8FF">Tab</font><font color="#FF9933"> - switch</font>');
         check("error note", NoteFormat.toMarkup("Error while x: y\n/w - z", true, true),
             '<font color="#E8604C">[Chat Plus] Error while x: y</font><br/><font color="#E8604C">/w - z</font>');
+        check("heading gold without its mark, command line unchanged", NoteFormat.toMarkup("x\n## Chat Plus\n/leave - y", false),
+            '<font color="#FF9933">x</font><br/><font color="#FFD24A">Chat Plus</font><br/>'
+            + '<font color="#8CC8FF">/leave</font><font color="#FF9933"> - y</font>');
         check("command without description", NoteFormat.toMarkup("x\n/leave"),
             '<font color="#FF9933">[Chat Plus] x</font><br/><font color="#FF9933">/leave</font>');
     }
