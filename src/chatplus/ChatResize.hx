@@ -112,7 +112,8 @@ class ChatResize {
     }
 
     /// Removes the shown lines of `chat` (a `ui.hud.ChatBox`); the game builds them again from the history.
-    public static function rebuild(chat:Dynamic):Void {
+    /// `errorLines` also removes `chatError` lines. They are not in the history, so they don't come back.
+    public static function rebuild(chat:Dynamic, errorLines = false):Void {
         if (G.field(chat, "parent") == null) return;
         var messages = G.field(chat, "messages");
         var count:Int = G.call("h2d.Object", "get_numChildren", messages);
@@ -120,7 +121,9 @@ class ChatResize {
         for (i in 0...count) {
             var child = G.call("h2d.Object", "getChildAt", messages, [i]);
             // The scrollbar and other parts of the message list stay.
-            if (child != null && hl.Type.getDynamic(child).getTypeName() == "ui.hud.ChatBoxMessage") lines.push(child);
+            if (child == null) continue;
+            var type = hl.Type.getDynamic(child).getTypeName();
+            if (type == "ui.hud.ChatBoxMessage" || (errorLines && type == "ui.hud.ChatBoxLine")) lines.push(child);
         }
         for (line in lines) G.call("h2d.Object", "remove", line);
         HlxRuntime.setField(chat, "messageIndex", 0);

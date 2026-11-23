@@ -143,7 +143,7 @@ class CommandRunner {
             if (channel != null && ClearFilter.removes(Type.enumIndex(channel), settings)) G.call("hl.types.ArrayObj", "splice", history, [i, 1]);
         }
         if (settings.clearWhisperChannels) clearWhisperChannels();
-        ChatResize.rebuild(chat);
+        ChatResize.rebuild(chat, settings.clearSystem);
         if (settings.clearNote) info(Texts.get("clear.done"));
         return "";
     }
