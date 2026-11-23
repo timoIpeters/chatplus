@@ -20,6 +20,8 @@ class Settings {
         {key: "rememberPlayers", section: "players"},
         {key: "inviteFirstMatch", section: "players"},
         {key: "whisperFirstMatch", section: "players"},
+        {key: "commandFirstMatch", section: "players"},
+        {key: "groupHelp", section: "players"},
         {key: "clearAll", section: "clear"},
         {key: "clearGroup", section: "clear"},
         {key: "clearLocal", section: "clear"},
@@ -62,6 +64,10 @@ class Settings {
     public var inviteFirstMatch = true;
     /// `/w` with a name several accounts share: whisper the best match right away. Off: list them and keep the message until one is picked.
     public var whisperFirstMatch = false;
+    /// A command several mods use: run the first. Off: list them and wait for a pick.
+    public var commandFirstMatch = true;
+    /// `/help` with a heading per mod. Off: one list with the mod names.
+    public var groupHelp = true;
     /// Red chat lines for missing game elements and runtime errors (always in `hlx.log`).
     public var showErrors = true;
     /// What `/clear` removes: messages per channel kind, and the whisper channels of the channel list.

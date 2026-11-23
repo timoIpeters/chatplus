@@ -21,14 +21,6 @@ enum ChatCommand {
 }
 
 class ChatCommands {
-    static final HELP_KEYS = ["help.title", "help.all", "help.group", "help.local", "help.reply", "help.tab", "help.whisper", "help.invite",
-        "help.leave", "help.ignore", "help.unignore", "help.friend", "help.clear", "help.chatplus", "help.help"];
-
-    /// Lines shown by `/help`, in the current language.
-    public static function help():Array<String> {
-        return [for (key in HELP_KEYS) Texts.get(key)];
-    }
-
     /// The mod's command for `/command args...`, or null when the game should handle it.
     public static function parse(command:String, args:Array<String>):Null<ChatCommand> {
         var words = [for (a in args) if (a != "") a];

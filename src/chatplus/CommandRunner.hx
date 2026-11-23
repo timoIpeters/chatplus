@@ -38,7 +38,7 @@ class CommandRunner {
             case Friend(name): friend(name);
             case Clear: clear();
             case Help:
-                info(ChatCommands.help().join("\n"));
+                info(CommandRouter.help(ChatPlus.commandOwners(), ChatPlus.settings.groupHelp).join("\n"));
                 "";
             case Check:
                 var report = GameCheck.report(GameCheck.missing(Game.exists));

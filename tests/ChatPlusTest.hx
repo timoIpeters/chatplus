@@ -2,7 +2,9 @@ import chatplus.ChatCommand;
 import chatplus.ChatSize;
 import chatplus.ChatTime;
 import chatplus.ClearFilter;
+import chatplus.CommandRouter;
 import chatplus.GameCheck;
+import chatplus.ModCommands;
 import chatplus.NoteFormat;
 import chatplus.PlayerBook;
 import chatplus.PlayerLookup;
@@ -16,6 +18,7 @@ class ChatPlusTest {
         chatTime();
         settings();
         commands();
+        modCommands();
         playerBook();
         playerLookup();
         noteFormat();
@@ -43,6 +46,7 @@ class ChatPlusTest {
         check("default switchMessage", d.switchMessage, false);
         check("default inviteFirstMatch", d.inviteFirstMatch, true);
         check("default rememberClosed", d.rememberClosed, true);
+        check("default commandFirstMatch, groupHelp", d.commandFirstMatch && d.groupHelp, true);
         check("default showErrors", d.showErrors, true);
         check("default /clear: all messages, channels kept, no note",
             [d.clearAll, d.clearGroup, d.clearLocal, d.clearWhispers, d.clearSystem, d.clearWhisperChannels, d.clearNote].join(","), "true,true,true,true,true,false,false");
@@ -127,6 +131,64 @@ class ChatPlusTest {
         check("chatplus", Std.string(ChatCommands.parse("chatplus", [])), "Check");
         check("game command stays with the game", ChatCommands.parse("p", ["hi"]), null);
         check("unknown command stays with the game", ChatCommands.parse("dance", []), null);
+    }
+
+    static function clashEntry(run:Dynamic):Dynamic {
+        return {id: "aaa-clash-test", mod: "Clash Test", run: run, commands: [
+            {names: ["Roll"], usage: "/roll <max>", text: "test roll", texts: {de: "Testwurf"}},
+            {names: ["clear"], usage: "/clear", text: "test clear"},
+            {usage: "/nonames"},
+        ]};
+    }
+
+    // A second owner of /roll without `run`.
+    static final OTHER_ENTRY:Dynamic = {id: "other-mod", mod: "Other Mod", commands: [{names: ["roll"], usage: "/roll", text: "other roll"}]};
+
+    static function modCommands():Void {
+        for (k in ModCommands.OWN) for (n in k.names) check("own help name /" + n + " is parsed", ChatCommands.parse(n, ["x"]) != null, true);
+        var run = (chat:Dynamic, command:String, args:Dynamic) -> "sent";
+        var entry = ModCommands.fromEntry(clashEntry(run));
+        check("entry: names lower case, line with text, entry without names dropped", [for (c in entry.commands) c.names.join("/") + "=" + c.line].join(";"),
+            "roll=/roll <max> - test roll;clear=/clear - test clear");
+        check("entry with run is a handler", std.Type.enumConstructor(entry.kind), "Handler");
+        check("entry without run is handed on", ModCommands.fromEntry(clashEntry(null)).kind, PassOn);
+        check("own entry skipped", ModCommands.fromEntry({id: "chat-plus", mod: "Chat Plus"}), null);
+        check("malformed entry skipped", ModCommands.fromEntry({id: "x", commands: 5}), null);
+        check("entry without id skipped", ModCommands.fromEntry({mod: "x"}), null);
+
+        var all = ModCommands.all([OTHER_ENTRY, clashEntry(run)]);
+        check("owners in HLX order, game last", [for (o in all) o.id].join(","), "aaa-clash-test,chat-plus,other-mod,");
+        check("owners of /roll", [for (o in CommandRouter.ownersOf("roll", all)) o.id].join(","), "aaa-clash-test,other-mod");
+        check("owners of /clear", [for (o in CommandRouter.ownersOf("clear", all)) o.id].join(","), "aaa-clash-test,chat-plus");
+        var passOnTwice = ModCommands.all([{id: "zzz", mod: "Z", commands: [{names: ["p"], usage: "/p"}]}]);
+        check("only the first handed-on owner is kept", [for (o in CommandRouter.ownersOf("p", passOnTwice)) o.id].join(","), "zzz");
+
+        function route(name:String, pick:Null<Int>, firstMatch:Bool):String {
+            return switch (CommandRouter.route(name, pick, all, firstMatch)) {
+                case Pass: "Pass";
+                case Run(o): "Run " + o.id;
+                case Ask(os): "Ask " + [for (o in os) o.id].join(",");
+                case NoPick(n): "NoPick " + n;
+            }
+        }
+        check("unknown command goes to the game", route("dance", null, true), "Pass");
+        check("single owner runs", route("w", null, false), "Run chat-plus");
+        check("game command runs as the game's", route("p", null, true), "Run ");
+        check("shared, first match runs it without a list", route("roll", null, true), "Run aaa-clash-test");
+        check("shared, ask", route("clear", null, false), "Ask aaa-clash-test,chat-plus");
+        check("pick", route("clear", 2, false), "Run chat-plus");
+        check("pick out of range", route("clear", 3, true), "NoPick 2");
+        check("pick of an unknown command", route("dance", 1, true), "NoPick 0");
+
+        var grouped = CommandRouter.help(all, true);
+        check("grouped help: headings in numbering order", [for (l in grouped) if (StringTools.startsWith(l, "## ")) l].join("|"),
+            "## Clash Test|## Chat Plus|## Other Mod|## Game");
+        check("grouped help: shared command marked under each owner", [for (l in grouped) if (l.indexOf("[/") >= 0) l].join("|"),
+            "/roll <max> - test roll [/roll:1]|/clear - test clear [/clear:1]|/clear - remove chat messages (what is removed: Mod Settings) [/clear:2]|/roll - other roll [/roll:2]");
+        var flat = CommandRouter.help(all, false);
+        check("flat help: same lines without headings", flat.length, grouped.length - 4);
+        check("flat help: other mods named", flat[2], "/clear - test clear (Clash Test) [/clear:1]");
+        check("flat help: own and game lines unnamed", [flat[5], flat[flat.length - 1]].join("|"), "/leave - leave your group|Tab, Shift+Tab - switch channel while typing");
     }
 
     static function playerBook():Void {
@@ -230,7 +292,8 @@ class ChatPlusTest {
         Texts.lang = "de";
         check("German", Texts.get("invite.sent", ["Anna"]), "Gruppeneinladung an Anna gesendet");
         check("German, repeated placeholder", Texts.get("ignore.done", ["Bob"]), "Bob wird ignoriert. /unignore Bob macht das rückgängig");
-        check("German help keeps the command format", ChatCommands.help()[6], "/w, /whisper, /tell <Name> [Text] - einem Spieler zuflüstern");
+        check("German help keeps the command format", CommandRouter.help(ModCommands.all([]), true)[2], "/w, /whisper, /tell <Name> [Text] - einem Spieler zuflüstern");
+        check("German text of a registered command", ModCommands.fromEntry(clashEntry(null)).commands[0].line, "/roll <max> - Testwurf");
         check("German description", PlayerLookup.describe({name: "S", uid: "1", seen: 0, source: OnMap, level: 28, live: true}, 0), "Stufe 28, auf deiner Karte");
         var formats:Dynamic = haxe.Json.parse(Settings.formatsJson());
         var configs:Array<Dynamic> = formats.configs;

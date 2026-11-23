@@ -26,10 +26,27 @@ The game's own commands keep working: `/all`, `/p`, `/s`, `/r`. Chat Plus adds:
 | `/unignore <name>` | Stops ignoring the player |
 | `/friend`, `/addfriend <name>` | Sends a friend request |
 | `/clear` | Removes chat messages; they don't come back after a scene change or character switch. What it removes is set in the settings |
-| `/help` | Lists all chat commands, including the game's |
+| `/help` | Lists all chat commands, also those of the game and other mods |
 | `/chatplus` | Checks that the game still has everything the mod uses |
 
 Tip: Tab and Shift+Tab switch the channel while you type. This is a game feature that the game's options don't list.
+
+### Commands of other mods
+
+`/help` also shows the commands of other mods that support it, each mod under its own heading.
+
+If two mods use the same command, `/help` numbers them, e.g. `[/roll:1]` and `[/roll:2]`. A plain `/roll` uses the first one, `/roll:2` the second. Mods are numbered by folder name (A-Z), the game comes last.
+
+To choose each time instead, turn off "Auto-pick a mod for shared commands". Then `/roll 100` shows:
+
+```
+[Chat Plus] 2 matches for /roll, pick one:
+1) Some Mod
+2) Other Mod
+Pick: /roll:1 (keeps what you typed after /roll)
+```
+
+and `/roll:2` runs the second mod's `/roll 100`.
 
 ### Finding players by name
 
@@ -60,6 +77,8 @@ Esc → Mod Settings → Chat Plus. Changes apply right away.
 | Players & commands | Remember players across restarts | on |
 | | Auto-pick shared names for /invite | on |
 | | Auto-pick shared names for /w | off |
+| | Auto-pick a mod for shared commands | on |
+| | Group /help by mod | on |
 | /clear | Clear All / Group / Local / whisper / system messages | on |
 | | Clear whisper channels | off |
 | | Show a note after /clear | off |
@@ -90,6 +109,37 @@ To remove the mod, delete `hlx\mods\chat-plus\` and, for its settings, `hlx\conf
 ## After a game update
 
 At every start Chat Plus checks that the game still has the functions it uses. If something is missing, red `[Chat Plus]` lines in the chat name it and the feature that stops working; the rest of the mod keeps working. `/chatplus` runs the check at any time. Details are in `hlx\logs\hlx.log`.
+
+## For mod authors
+
+To show your commands in `/help`, add this to your mod's `main()`. Your mod doesn't need Chat Plus for it and works the same without it.
+
+```haxe
+hlx.runtime.Registry.register("chat-commands", "my-mod", {
+    id: "my-mod",                 // your mod folder, the same as the key
+    mod: "My Mod",                // heading in /help
+    commands: [
+        {names: ["roll"], usage: "/roll [max]", text: "roll a number", texts: {de: "eine Zahl würfeln"}},
+    ],
+    run: runCommand,              // optional
+});
+```
+
+- `names`: the command names, without `/`.
+- `usage` and `text`: shown as `/roll [max] - roll a number`. `texts` is optional and holds `text` in other languages, by the game's language code.
+- `run`: lets Chat Plus run your command when a player picks your mod by number. It takes the same arguments as `ui.hud.ChatBox.handleCommand`, `(chat:Dynamic, command:String, args:Dynamic)`, and returns the text to send, or `""`.
+
+Also put this line first in your own `ChatBox.handleCommand` hook. It leaves the command to Chat Plus while Chat Plus is installed:
+
+```haxe
+if (hlx.runtime.Registry.get("chat-commands", "chat-plus") != null) return Continue;
+```
+
+All of this is optional. Your command works without it, but:
+
+- Without registering, it isn't in `/help`.
+- Without `run`, it only gets a number if no other mod without `run` comes before yours (folder order).
+- Without the line in your hook, `/roll:2` still works. But if your folder name comes before `chat-plus`, a plain `/roll` always goes to your mod.
 
 ## License
 

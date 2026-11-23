@@ -47,6 +47,10 @@ class ChatPlus {
     static var reportedErrors:Map<String, Bool> = [];
     static var chatReady = false;
     static var flushing = false;
+    // True while Chat Plus re-sends a picked command.
+    static var handingOn = false;
+    // Arguments kept until the player picks an owner, per command name.
+    static var heldArgs:Map<String, Dynamic> = [];
 
     static function main():Void {
         trace("[ChatPlus] version " + Version.VERSION);
@@ -55,6 +59,8 @@ class ChatPlus {
         updateLanguage();
         writeFormats();
         hlx.runtime.Bus.subscribe(CONFIG_CHANGED + MOD_NAME, onConfigChanged);
+        // Tells other mods that Chat Plus routes chat commands.
+        hlx.runtime.Registry.register(ModCommands.BUCKET, ModCommands.SELF, {id: ModCommands.SELF, mod: "Chat Plus"});
         checkGame();
     }
 
@@ -184,18 +190,65 @@ class ChatPlus {
         return settings.keepHistory ? Skip : Continue;
     }
 
-    // Mod commands are handled here; the game's own commands (/all, /p, /r, ...) go on to the game.
+    // Every chat command passes here and goes to its owner: Chat Plus, another mod or the game.
     @:hlx.prefix(ui.hud.ChatBox.handleCommand)
     static function beforeHandleCommand(instance:Dynamic, command:String, args:Dynamic):HlxPrefixResult<String> {
+        if (handingOn) return Continue;
         try {
-            var words = [for (a in G.elements(args)) Std.string(a)];
-            var parsed = ChatCommands.parse(command, words);
-            if (parsed == null) return Continue;
-            return SkipWith(new CommandRunner(instance).run(parsed));
+            return routeCommand(instance, command, args);
         } catch (error:Dynamic) {
+            handingOn = false;
             log("running /" + command, error);
             return Continue;
         }
+    }
+
+    /// Everyone with chat commands, in HLX hook order.
+    public static function commandOwners():Array<ModCommands.Owner> {
+        return ModCommands.all(hlx.runtime.Registry.list(ModCommands.BUCKET));
+    }
+
+    static function routeCommand(chat:Dynamic, command:String, args:Dynamic):HlxPrefixResult<String> {
+        var query = PlayerLookup.parseQuery(command);
+        var name = query.name.toLowerCase();
+        if (query.pick == null) heldArgs.remove(name);
+        else if (G.elements(args).length == 0 && heldArgs.exists(name)) args = heldArgs.get(name);
+        return switch (CommandRouter.route(name, query.pick, commandOwners(), settings.commandFirstMatch)) {
+            case Pass: Continue;
+            case Run(owner): runCommand(chat, owner, name, args, query.pick != null);
+            case Ask(owners):
+                heldArgs.set(name, args);
+                showOwners(name, owners);
+                SkipWith("");
+            case NoPick(_):
+                G.call("ui.hud.ChatBox", "chatError", chat, [NoteFormat.PREFIX + Texts.get("owners.noPick", [name, query.pick])]);
+                SkipWith("");
+        }
+    }
+
+    // `picked`: typed as `/name:N`, so a handed-on command is sent again as `/name`.
+    static function runCommand(chat:Dynamic, owner:ModCommands.Owner, name:String, args:Dynamic, picked:Bool):HlxPrefixResult<String> {
+        switch (owner.kind) {
+            case Own:
+                var parsed = ChatCommands.parse(name, [for (a in G.elements(args)) Std.string(a)]);
+                return SkipWith(new CommandRunner(chat).run(parsed));
+            case Handler(run):
+                var text:Dynamic = Reflect.callMethod(null, run, [chat, name, args]);
+                return SkipWith(text == null ? "" : Std.string(text));
+            case PassOn:
+                if (!picked) return Continue;
+                handingOn = true;
+                var text:Dynamic = G.call("ui.hud.ChatBox", "handleCommand", chat, [name, args]);
+                handingOn = false;
+                return SkipWith(text == null ? "" : Std.string(text));
+        }
+    }
+
+    static function showOwners(name:String, owners:Array<ModCommands.Owner>):Void {
+        var lines = [Texts.get("owners.pick", [owners.length, name])];
+        for (i in 0...owners.length) lines.push((i + 1) + ") " + owners[i].name);
+        lines.push(Texts.get("owners.hint", [name]));
+        addSystemMessage(lines.join("\n"), true);
     }
 
     // Every scene builds a new chat window: it takes over the closed state of the previous one,
