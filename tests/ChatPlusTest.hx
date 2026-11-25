@@ -146,21 +146,18 @@ class ChatPlusTest {
         check("unknown command stays with the game", ChatCommands.parse("dance", []), null);
     }
 
-    static function clashEntry(run:Dynamic):Dynamic {
-        return {
-            id: "aaa-clash-test",
-            mod: "Clash Test",
-            run: run,
-            commands: [
-                {names: ["Roll"], usage: "/roll <max>", text: "test roll", texts: {de: "Testwurf"}},
-                {names: ["clear"], usage: "/clear", text: "test clear"},
-                {usage: "/nonames"},
-            ]
-        };
+    static function clashEntry():Dynamic {
+        var commands:Array<Dynamic> = [
+            {name: "Roll", usage: "/roll <max>", description: "test roll", descriptions: {de: "Testwurf"}},
+            {name: "clear", description: "test clear"},
+            {usage: "/noname"},
+        ];
+
+        return {id: "aaa-clash-test", name: "Clash Test", commands: commands};
     }
 
-    // A second owner of /roll without `run`.
-    static final OTHER_ENTRY:Dynamic = {id: "other-mod", mod: "Other Mod", commands: [{names: ["roll"], usage: "/roll", text: "other roll"}]};
+    // A second owner of /roll: no id, alias, no usage.
+    static final OTHER_ENTRY:Dynamic = {name: "Other Mod", commands: [{name: "dice", aliases: ["roll"], description: "other roll"}]};
 
     static function modCommands():Void {
         for (k in ModCommands.OWN) {
@@ -169,22 +166,44 @@ class ChatPlusTest {
             }
         }
 
-        var run = (chat:Dynamic, command:String, args:Dynamic) -> "sent";
-        var entry = ModCommands.fromEntry(clashEntry(run));
-        check("entry: names lower case, line with text, entry without names dropped", [for (c in entry.commands) c.names.join("/") + "=" + c.line].join(";"),
-            "roll=/roll <max> - test roll;clear=/clear - test clear");
-        check("entry with run is a handler", std.Type.enumConstructor(entry.kind), "Handler");
-        check("entry without run is handed on", ModCommands.fromEntry(clashEntry(null)).kind, PassOn);
-        check("own entry skipped", ModCommands.fromEntry({id: "chat-plus", mod: "Chat Plus"}), null);
-        check("malformed entry skipped", ModCommands.fromEntry({id: "x", commands: 5}), null);
-        check("entry without id skipped", ModCommands.fromEntry({mod: "x"}), null);
+        var entry = ModCommands.fromEntry(clashEntry());
+        check("entry: names lower case, line with description, command without name dropped",
+            [for (c in entry.commands) c.names.join("/") + "=" + c.line].join(";"), "roll=/roll <max> - test roll;clear=/clear - test clear");
+        check("entry is run over the bus", entry.kind, Published);
+        check("topic keeps the registered name", ModCommands.topic(entry, "roll"), "command.execute.Roll");
+        check("no topic for a command the owner lacks", ModCommands.topic(entry, "dance"), null);
 
-        var all = ModCommands.all([OTHER_ENTRY, clashEntry(run)]);
-        check("owners in HLX order, game last", [for (o in all) o.id].join(","), "aaa-clash-test,chat-plus,other-mod,");
-        check("owners of /roll", [for (o in CommandRouter.ownersOf("roll", all)) o.id].join(","), "aaa-clash-test,other-mod");
+        var other = ModCommands.fromEntry(OTHER_ENTRY);
+        check("entry without id: name identifies it", other.id, "Other Mod");
+        check("aliases and default usage", other.commands[0].names.join("/") + "=" + other.commands[0].line, "dice/roll=/dice, /roll - other roll");
+        check("alias runs the command's topic", ModCommands.topic(other, "roll"), "command.execute.dice");
+
+        var scoped:Dynamic = {id: "my-dice", name: "Dice", commands: [{name: "Roll", scoped: true}, {name: "flip"}]};
+        var scopedOwner = ModCommands.fromEntry(scoped);
+        check("scoped command runs on the id's topic", ModCommands.topic(scopedOwner, "roll"), "command.execute.my-dice.Roll");
+        check("unscoped command of the same entry keeps the plain topic", ModCommands.topic(scopedOwner, "flip"), "command.execute.flip");
+        check("scoped without id keeps the plain topic",
+            ModCommands.topic(ModCommands.fromEntry({name: "No Id", commands: [{name: "roll", scoped: true}]}), "roll"), "command.execute.roll");
+        var emptyId = ModCommands.fromEntry({id: "", name: "Empty Id", commands: [{name: "roll", scoped: true}]});
+        check("empty id: name identifies it, plain topic", emptyId.id + " " + ModCommands.topic(emptyId, "roll"), "Empty Id command.execute.roll");
+        var twoRolls = ModCommands.all([{id: "aaa-dice", name: "Dice A", commands: [{name: "roll"}]}, scoped]);
+        function pickedTopic(pick:Int):String {
+            return switch (CommandRouter.route("roll", pick, twoRolls, true)) {
+                case Run(o): ModCommands.topic(o, "roll");
+                case other: Std.string(other);
+            }
+        }
+        check("/roll:1 of two mods with roll: plain topic of the first", pickedTopic(1), "command.execute.roll");
+        check("/roll:2 of two mods with roll: scoped topic of the second", pickedTopic(2), "command.execute.my-dice.Roll");
+        check("own entry skipped", ModCommands.fromEntry({id: "chat-plus", name: "Chat Plus"}), null);
+        check("malformed entry skipped", ModCommands.fromEntry({id: "x", commands: 5}), null);
+        check("entry without id and name skipped", ModCommands.fromEntry({description: "x"}), null);
+        check("entry without commands has none", ModCommands.fromEntry({id: "plain", name: "Plain"}).commands.length, 0);
+
+        var all = ModCommands.all([OTHER_ENTRY, clashEntry()]);
+        check("owners in id order ignoring case, game last", [for (o in all) o.id].join(","), "aaa-clash-test,chat-plus,Other Mod,");
+        check("owners of /roll", [for (o in CommandRouter.ownersOf("roll", all)) o.id].join(","), "aaa-clash-test,Other Mod");
         check("owners of /clear", [for (o in CommandRouter.ownersOf("clear", all)) o.id].join(","), "aaa-clash-test,chat-plus");
-        var passOnTwice = ModCommands.all([{id: "zzz", mod: "Z", commands: [{names: ["p"], usage: "/p"}]}]);
-        check("only the first handed-on owner is kept", [for (o in CommandRouter.ownersOf("p", passOnTwice)) o.id].join(","), "zzz");
 
         function route(name:String, pick:Null<Int>, firstMatch:Bool):String {
             return switch (CommandRouter.route(name, pick, all, firstMatch)) {
@@ -207,7 +226,7 @@ class ChatPlusTest {
         check("grouped help: headings in numbering order", [for (l in grouped) if (StringTools.startsWith(l, "## ")) l].join("|"),
             "## Clash Test|## Chat Plus|## Other Mod|## Game");
         check("grouped help: shared command marked under each owner", [for (l in grouped) if (l.indexOf("[/") >= 0) l].join("|"),
-            "/roll <max> - test roll [/roll:1]|/clear - test clear [/clear:1]|/clear - remove chat messages (what is removed: Mod Settings) [/clear:2]|/roll - other roll [/roll:2]");
+            "/roll <max> - test roll [/roll:1]|/clear - test clear [/clear:1]|/clear - remove chat messages (what is removed: Mod Settings) [/clear:2]|/dice, /roll - other roll [/roll:2]");
         var flat = CommandRouter.help(all, false);
         check("flat help: same lines without headings", flat.length, grouped.length - 4);
         check("flat help: other mods named", flat[2], "/clear - test clear (Clash Test) [/clear:1]");
@@ -328,7 +347,7 @@ class ChatPlusTest {
         check("German, repeated placeholder", Texts.get("ignore.done", ["Bob"]), "Bob wird ignoriert. /unignore Bob macht das rückgängig");
         check("German help keeps the command format", CommandRouter.help(ModCommands.all([]), true)[2],
             "/w, /whisper, /tell <Name> [Text] - einem Spieler zuflüstern");
-        check("German text of a registered command", ModCommands.fromEntry(clashEntry(null)).commands[0].line, "/roll <max> - Testwurf");
+        check("German text of a registered command", ModCommands.fromEntry(clashEntry()).commands[0].line, "/roll <max> - Testwurf");
         check("German description", PlayerLookup.describe({name: "S", uid: "1", seen: 0, source: OnMap, level: 28, live: true}, 0),
             "Stufe 28, auf deiner Karte");
         var formats:Dynamic = haxe.Json.parse(Settings.formatsJson());
