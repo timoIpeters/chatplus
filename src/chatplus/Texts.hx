@@ -10,9 +10,20 @@ class Texts {
 
     public static function get(key:String, ?args:Array<Dynamic>):String {
         var text = (lang == "de" ? DE.get(key) : null);
-        if (text == null) text = EN.get(key);
-        if (text == null) return key;
-        if (args != null) for (i in 0...args.length) text = text.replace("{" + i + "}", Std.string(args[i]));
+        if (text == null) {
+            text = EN.get(key);
+        }
+
+        if (text == null) {
+            return key;
+        }
+
+        if (args != null) {
+            for (i in 0...args.length) {
+                text = text.replace("{" + i + "}", Std.string(args[i]));
+            }
+        }
+
         return text;
     }
 
@@ -110,7 +121,8 @@ class Texts {
         "set.groupHelp.label" => "Group /help by mod",
         "set.groupHelp.tip" => "/help lists the commands under a heading per mod. Off: one list, with the mod's name after other mods' commands.",
         "set.showErrors.label" => "Show mod errors in the chat",
-        "set.showErrors.tip" => "Red [Chat Plus] lines when something of the game the mod uses is missing (e.g. after a game update) or the mod hits an error. Always written to hlx/logs/hlx.log.",
+        "set.showErrors.tip" =>
+        "Red [Chat Plus] lines when something of the game the mod uses is missing (e.g. after a game update) or the mod hits an error. Always written to hlx/logs/hlx.log.",
         "set.clearAll.label" => "Clear All messages",
         "set.clearAll.tip" => "/clear removes messages of the All channel.",
         "set.clearGroup.label" => "Clear Group messages",
@@ -173,7 +185,8 @@ class Texts {
         "clear.done" => "Chat geleert",
         "leave.solo" => "Du bist in keiner Gruppe",
         "find.noPick" => "Kein Spieler {0}. Gib {1} {2} ein, um die Spieler mit diesem Namen aufzulisten",
-        "find.unknown" => "Unbekannter Spieler {0}: gefunden werden nur Spieler, die du auf deiner Karte, in deiner Gruppe, in deiner Freundesliste oder im Chat gesehen hast",
+        "find.unknown" =>
+        "Unbekannter Spieler {0}: gefunden werden nur Spieler, die du auf deiner Karte, in deiner Gruppe, in deiner Freundesliste oder im Chat gesehen hast",
         "choices.using" => "{0} Spieler namens {1}, nehme 1:",
         "choices.pick" => "{0} Spieler namens {1}, wähle einen:",
         "hint.another" => "Anderen wählen: {0} {1}:2",
@@ -209,7 +222,8 @@ class Texts {
         "set.keepHistory.label" => "Chat beim Charakterwechsel behalten",
         "set.keepHistory.tip" => "Nachrichten und Flüsterkanäle bleiben nach einem Charakterwechsel erhalten.",
         "set.switchMessage.label" => "Zeile beim Charakterwechsel",
-        "set.switchMessage.tip" => "Eine Zeile \"------ Charakterwechsel ------\" im Chat bei jedem Charakterwechsel. Braucht \"Chat beim Charakterwechsel behalten\".",
+        "set.switchMessage.tip" =>
+        "Eine Zeile \"------ Charakterwechsel ------\" im Chat bei jedem Charakterwechsel. Braucht \"Chat beim Charakterwechsel behalten\".",
         "set.rememberClosed.label" => "Geschlossenen Chat geschlossen lassen",
         "set.rememberClosed.tip" => "Ein mit dem Minimieren-Knopf geschlossener Chat bleibt beim Szenenwechsel (Dungeon, Karte, Charakter) geschlossen.",
         "set.rememberPlayers.label" => "Spieler über Neustarts merken",
@@ -219,11 +233,13 @@ class Texts {
         "set.whisperFirstMatch.label" => "Gleiche Namen bei /w automatisch wählen",
         "set.whisperFirstMatch.tip" => "Haben mehrere Spieler den Namen, wird dem wahrscheinlichsten zugeflüstert. Aus: erst aus einer Liste wählen.",
         "set.commandFirstMatch.label" => "Mod bei gleichen Befehlen automatisch wählen",
-        "set.commandFirstMatch.tip" => "Nutzen mehrere Mods einen Befehl, wird der erste ausgeführt (Mod-Ordner A-Z, das Spiel zuletzt). Aus: erst aus einer Liste wählen.",
+        "set.commandFirstMatch.tip" =>
+        "Nutzen mehrere Mods einen Befehl, wird der erste ausgeführt (Mod-Ordner A-Z, das Spiel zuletzt). Aus: erst aus einer Liste wählen.",
         "set.groupHelp.label" => "/help nach Mod gruppieren",
         "set.groupHelp.tip" => "/help zeigt die Befehle unter einer Überschrift je Mod. Aus: eine Liste, mit dem Mod-Namen hinter den Befehlen anderer Mods.",
         "set.showErrors.label" => "Mod-Fehler im Chat anzeigen",
-        "set.showErrors.tip" => "Rote [Chat Plus]-Zeilen, wenn etwas vom Spiel fehlt, das die Mod nutzt (z. B. nach einem Spielupdate), oder die Mod auf einen Fehler stößt. Steht immer auch in hlx/logs/hlx.log.",
+        "set.showErrors.tip" =>
+        "Rote [Chat Plus]-Zeilen, wenn etwas vom Spiel fehlt, das die Mod nutzt (z. B. nach einem Spielupdate), oder die Mod auf einen Fehler stößt. Steht immer auch in hlx/logs/hlx.log.",
         "set.clearAll.label" => "Nachrichten in Alle entfernen",
         "set.clearAll.tip" => "/clear entfernt Nachrichten des Kanals Alle.",
         "set.clearGroup.label" => "Gruppennachrichten entfernen",

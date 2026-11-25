@@ -15,7 +15,6 @@ enum OwnerKind {
 
 /// An owner of chat commands. `id` is the mod folder, `""` for the game.
 typedef Owner = {id:String, name:String, kind:OwnerKind, commands:Array<CommandHelp>};
-
 typedef HelpKey = {key:String, names:Array<String>};
 
 /// Chat commands of the game, Chat Plus and other mods. Other mods register theirs in the registry bucket
@@ -43,6 +42,7 @@ class ModCommands {
         {key: "help.chatplus", names: ["chatplus"]},
         {key: "help.help", names: ["help", "?"]},
     ];
+
     public static function game():Owner {
         return {id: "", name: Texts.get("help.game"), kind: PassOn, commands: helpLines(GAME)};
     }
@@ -54,12 +54,17 @@ class ModCommands {
     /// All owners in hook order: mod folders A-Z, the game last.
     public static function all(entries:Array<Dynamic>):Array<Owner> {
         var owners = [own()];
+
         for (e in entries) {
             var owner = fromEntry(e);
-            if (owner != null) owners.push(owner);
+            if (owner != null) {
+                owners.push(owner);
+            }
         }
+
         owners.sort((a, b) -> Reflect.compare(a.id, b.id));
         owners.push(game());
+
         return owners;
     }
 
@@ -67,19 +72,30 @@ class ModCommands {
     public static function fromEntry(entry:Dynamic):Null<Owner> {
         try {
             var id = text(Reflect.field(entry, "id"));
-            if (id == null || id == SELF) return null;
+            if (id == null || id == SELF) {
+                return null;
+            }
+
             var name = text(Reflect.field(entry, "mod"));
             var run = Reflect.field(entry, "run");
             var commands:Array<CommandHelp> = [];
+
             for (c in items(Reflect.field(entry, "commands"))) {
                 var names = [for (n in items(Reflect.field(c, "names"))) text(n).toLowerCase()];
                 var usage = text(Reflect.field(c, "usage"));
-                if (names.length == 0 || usage == null) continue;
+                if (names.length == 0 || usage == null) {
+                    continue;
+                }
+
                 var texts = Reflect.field(c, "texts");
                 var description = texts == null ? null : text(Reflect.field(texts, Texts.lang));
-                if (description == null) description = text(Reflect.field(c, "text"));
+                if (description == null) {
+                    description = text(Reflect.field(c, "text"));
+                }
+
                 commands.push({names: names, line: description == null ? usage : usage + " - " + description});
             }
+
             return {id: id, name: name == null ? id : name, kind: run == null ? PassOn : Handler(run), commands: commands};
         } catch (_:Dynamic) {
             return null;
@@ -96,7 +112,10 @@ class ModCommands {
 
     // Another mod's arrays can only be read as `hl.types.ArrayBase`.
     static function items(value:Dynamic):Array<Dynamic> {
-        if (value == null) return [];
+        if (value == null) {
+            return [];
+        }
+
         #if hl
         var array:hl.types.ArrayBase = value;
         return [for (i in 0...array.length) array.getDyn(i)];

@@ -5,7 +5,6 @@ import haxe.Json;
 /// An on/off option: the `Settings` field it sets and the page section it belongs to (a `SECTIONS` id).
 /// Its label and tooltip are the texts `set.<key>.label` and `set.<key>.tip`.
 typedef Toggle = {key:String, section:String};
-
 /// A section of the settings page: heading text `title.<id>`, its checkboxes (`Toggle.section`), then its sliders.
 typedef Section = {id:String, sliders:Array<String>};
 
@@ -95,13 +94,26 @@ class Settings {
     public static function parse(json:String):Settings {
         var s = new Settings();
         var data:Dynamic = Json.parse(json);
+
         for (t in TOGGLES) {
             var value = Reflect.field(data, t.key);
-            if (Std.isOfType(value, Bool)) Reflect.setField(s, t.key, value);
+            if (Std.isOfType(value, Bool)) {
+                Reflect.setField(s, t.key, value);
+            }
         }
-        if (Std.isOfType(data.historyLimit, Int) && data.historyLimit > 0) s.historyLimit = data.historyLimit;
-        if (Std.isOfType(data.chatWidth, Int)) s.chatWidth = Std.int(Math.max(CHAT_WIDTH_MIN, data.chatWidth));
-        if (Std.isOfType(data.chatHeight, Int)) s.chatHeight = Std.int(Math.max(CHAT_HEIGHT_MIN, data.chatHeight));
+
+        if (Std.isOfType(data.historyLimit, Int) && data.historyLimit > 0) {
+            s.historyLimit = data.historyLimit;
+        }
+
+        if (Std.isOfType(data.chatWidth, Int)) {
+            s.chatWidth = Std.int(Math.max(CHAT_WIDTH_MIN, data.chatWidth));
+        }
+
+        if (Std.isOfType(data.chatHeight, Int)) {
+            s.chatHeight = Std.int(Math.max(CHAT_HEIGHT_MIN, data.chatHeight));
+        }
+
         return s;
     }
 
@@ -110,22 +122,38 @@ class Settings {
     public static function incomplete(json:String):Bool {
         var data:Dynamic = Json.parse(json);
         var saved:Dynamic = Json.parse(new Settings().toJson());
-        for (key in Reflect.fields(saved)) if (!Reflect.hasField(data, key)) return true;
+
+        for (key in Reflect.fields(saved)) {
+            if (!Reflect.hasField(data, key)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
     /// The settings page for Better Mod Settings (`configFormats.json` in the mod folder), in the current language.
     public static function formatsJson():String {
         var configs:Array<Dynamic> = [];
+
         for (section in SECTIONS) {
             configs.push({type: "title", label: Texts.get("title." + section.id)});
-            for (t in TOGGLES) if (t.section == section.id) configs.push(checkbox(t));
-            for (key in section.sliders) configs.push(switch (key) {
-                case "historyLimit": slider(key, HISTORY_MIN, HISTORY_MAX, HISTORY_STEP);
-                case "chatWidth": slider(key, CHAT_WIDTH_MIN, CHAT_WIDTH_MAX, CHAT_SIZE_STEP);
-                default: slider(key, CHAT_HEIGHT_MIN, CHAT_HEIGHT_MAX, CHAT_SIZE_STEP);
-            });
+
+            for (t in TOGGLES) {
+                if (t.section == section.id) {
+                    configs.push(checkbox(t));
+                }
+            }
+
+            for (key in section.sliders) {
+                configs.push(switch (key) {
+                    case "historyLimit": slider(key, HISTORY_MIN, HISTORY_MAX, HISTORY_STEP);
+                    case "chatWidth": slider(key, CHAT_WIDTH_MIN, CHAT_WIDTH_MAX, CHAT_SIZE_STEP);
+                    default: slider(key, CHAT_HEIGHT_MIN, CHAT_HEIGHT_MAX, CHAT_SIZE_STEP);
+                });
+            }
         }
+
         return Json.stringify({configs: configs, displayName: "Chat Plus", schemaVersion: 1}, null, "  ");
     }
 
@@ -143,10 +171,14 @@ class Settings {
 
     public function toJson():String {
         var data:Dynamic = {};
-        for (t in TOGGLES) Reflect.setField(data, t.key, get(t.key));
+        for (t in TOGGLES) {
+            Reflect.setField(data, t.key, get(t.key));
+        }
+
         data.historyLimit = historyLimit;
         data.chatWidth = chatWidth;
         data.chatHeight = chatHeight;
+
         return Json.stringify(data, null, "  ");
     }
 }

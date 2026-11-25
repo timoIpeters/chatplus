@@ -28,6 +28,7 @@ typedef Sighting = {
 /// One name can belong to several accounts (names are not unique) and one account to several names.
 class PlayerBook {
     public final limit:Int;
+
     var entries:Array<Sighting> = [];
 
     public function new(limit = 1000) {
@@ -42,17 +43,36 @@ class PlayerBook {
 
     /// Adds or updates the entry for this name and uid. Class and level stay when the new sighting has none.
     public function record(s:Sighting):Void {
-        if (s.name == null || s.uid == null || s.name == "") return;
+        if (s.name == null || s.uid == null || s.name == "") {
+            return;
+        }
+
         var key = s.name.toLowerCase();
         var old = null;
-        for (e in entries) if (e.uid == s.uid && e.name.toLowerCase() == key) old = e;
-        if (old != null) {
-            if (s.seen < old.seen) return;
-            entries.remove(old);
-            if (s.className == null) s.className = old.className;
-            if (s.level == null) s.level = old.level;
+
+        for (e in entries) {
+            if (e.uid == s.uid && e.name.toLowerCase() == key) {
+                old = e;
+            }
         }
+
+        if (old != null) {
+            if (s.seen < old.seen) {
+                return;
+            }
+
+            entries.remove(old);
+            if (s.className == null) {
+                s.className = old.className;
+            }
+
+            if (s.level == null) {
+                s.level = old.level;
+            }
+        }
+
         entries.push(stored(s));
+
         if (entries.length > limit) {
             entries.sort((a, b) -> a.seen < b.seen ? -1 : (a.seen > b.seen ? 1 : 0));
             entries.splice(0, entries.length - limit);
@@ -64,6 +84,7 @@ class PlayerBook {
         var key = name.toLowerCase();
         var found = [for (e in entries) if (e.name.toLowerCase() == key) e];
         found.sort((a, b) -> a.seen > b.seen ? -1 : (a.seen < b.seen ? 1 : 0));
+
         return found;
     }
 
@@ -75,15 +96,31 @@ class PlayerBook {
     public static function fromJson(json:String, limit = 1000):PlayerBook {
         var book = new PlayerBook(limit);
         var data:Array<Dynamic> = Json.parse(json);
-        if (!Std.isOfType(data, Array)) throw "players file is not a list";
+        if (!Std.isOfType(data, Array)) {
+            throw "players file is not a list";
+        }
+
         for (d in data) {
-            if (!Std.isOfType(d.name, String) || !Std.isOfType(d.uid, String) || !Std.isOfType(d.seen, Float)) continue;
+            if (!Std.isOfType(d.name, String) || !Std.isOfType(d.uid, String) || !Std.isOfType(d.seen, Float)) {
+                continue;
+            }
+
             var s:Sighting = {name: d.name, uid: d.uid, seen: d.seen, source: sourceOf(d.source)};
-            if (Std.isOfType(d.className, String)) s.className = d.className;
-            if (Std.isOfType(d.level, Int)) s.level = d.level;
-            if (Std.isOfType(d.channel, String)) s.channel = d.channel;
+            if (Std.isOfType(d.className, String)) {
+                s.className = d.className;
+            }
+
+            if (Std.isOfType(d.level, Int)) {
+                s.level = d.level;
+            }
+
+            if (Std.isOfType(d.channel, String)) {
+                s.channel = d.channel;
+            }
+
             book.record(s);
         }
+
         return book;
     }
 
@@ -99,9 +136,18 @@ class PlayerBook {
     // Copy without the fields that describe the present moment.
     static function stored(s:Sighting):Sighting {
         var c:Sighting = {name: s.name, uid: s.uid, seen: s.seen, source: s.source};
-        if (s.className != null) c.className = s.className;
-        if (s.level != null) c.level = s.level;
-        if (s.channel != null) c.channel = s.channel;
+        if (s.className != null) {
+            c.className = s.className;
+        }
+
+        if (s.level != null) {
+            c.level = s.level;
+        }
+
+        if (s.channel != null) {
+            c.channel = s.channel;
+        }
+
         return c;
     }
 }

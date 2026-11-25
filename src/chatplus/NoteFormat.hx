@@ -22,13 +22,20 @@ class NoteFormat {
             var t = i == 0 && withPrefix ? PREFIX + lines[i] : lines[i];
             error ? color(t, RED) : line(t);
         }];
+
         return out.join("<br/>");
     }
 
     static function line(text:String):String {
-        if (text.startsWith(HEADING)) return color(text.substr(HEADING.length), GOLD);
+        if (text.startsWith(HEADING)) {
+            return color(text.substr(HEADING.length), GOLD);
+        }
+
         var split = text.indexOf(COMMAND_SEPARATOR);
-        if (!(text.startsWith("/") || text.startsWith("Tab")) || split < 0) return color(text, ORANGE);
+        if (!(text.startsWith("/") || text.startsWith("Tab")) || split < 0) {
+            return color(text, ORANGE);
+        }
+
         return color(text.substr(0, split), LIGHT_BLUE) + color(text.substr(split), ORANGE);
     }
 

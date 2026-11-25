@@ -24,10 +24,12 @@ class ChatPlusTest {
         noteFormat();
         gameCheck();
         texts();
+
         if (failures > 0) {
             Sys.println(failures + " check(s) failed");
             Sys.exit(1);
         }
+
         Sys.println("All checks passed");
     }
 
@@ -49,7 +51,8 @@ class ChatPlusTest {
         check("default commandFirstMatch, groupHelp", d.commandFirstMatch && d.groupHelp, true);
         check("default showErrors", d.showErrors, true);
         check("default /clear: all messages, channels kept, no note",
-            [d.clearAll, d.clearGroup, d.clearLocal, d.clearWhispers, d.clearSystem, d.clearWhisperChannels, d.clearNote].join(","), "true,true,true,true,true,false,false");
+            [d.clearAll, d.clearGroup, d.clearLocal, d.clearWhispers, d.clearSystem, d.clearWhisperChannels, d.clearNote].join(","),
+            "true,true,true,true,true,false,false");
         var keepWhispers = Settings.parse('{"clearWhispers": false, "clearSystem": false}');
         check("filter: whispers kept", ClearFilter.removes(3, keepWhispers), false);
         check("filter: group removed", ClearFilter.removes(4, keepWhispers), true);
@@ -87,26 +90,36 @@ class ChatPlusTest {
 
         var t = Settings.parse('{"timestamps": false}');
         check("get", t.get("timestamps"), false);
-        for (toggle in Settings.TOGGLES) check("toggle key is a Bool field: " + toggle.key, Std.isOfType(Reflect.field(new Settings(), toggle.key), Bool), true);
+        for (toggle in Settings.TOGGLES) {
+            check("toggle key is a Bool field: " + toggle.key, Std.isOfType(Reflect.field(new Settings(), toggle.key), Bool), true);
+        }
         check("every toggle saved", [for (toggle in Settings.TOGGLES) if (new Settings().toJson().indexOf('"' + toggle.key + '"') < 0) toggle.key].length, 0);
 
         var formats:Dynamic = haxe.Json.parse(Settings.formatsJson());
         var configs:Array<Dynamic> = formats.configs;
         check("formats: display name", formats.displayName, "Chat Plus");
         check("formats: title first", configs[0].type, "title");
-        check("formats: sections", [for (c in configs) if (c.type == "title") c.label].join(","), "Chat,Character switch,Players & commands,/clear,Chat size,Troubleshooting");
-        check("formats: every toggle in a known section", [for (t in Settings.TOGGLES) if (!Lambda.exists(Settings.SECTIONS, s -> s.id == t.section)) t.key].join(","), "");
+        check("formats: sections", [for (c in configs) if (c.type == "title") c.label].join(","),
+            "Chat,Character switch,Players & commands,/clear,Chat size,Troubleshooting");
+        check("formats: every toggle in a known section",
+            [for (t in Settings.TOGGLES) if (!Lambda.exists(Settings.SECTIONS, s -> s.id == t.section)) t.key].join(","), "");
         var afterSwitchTitle = configs.indexOf([for (c in configs) if (c.type == "title" && c.label == "Character switch") c][0]);
         check("formats: history slider under Character switch", configs[afterSwitchTitle + 3].key, "historyLimit");
-        check("formats: one checkbox per toggle, in order", [for (c in configs) if (c.type == "checkbox") c.key].join(","), [for (t in Settings.TOGGLES) t.key].join(","));
-        check("formats: every checkbox has a tooltip", [for (c in configs) if (c.type == "checkbox" && (c.tooltip == null || c.tooltip.tooltipText == "")) c.key].length, 0);
+        check("formats: one checkbox per toggle, in order", [for (c in configs) if (c.type == "checkbox") c.key].join(","),
+            [for (t in Settings.TOGGLES) t.key].join(","));
+        check("formats: every checkbox has a tooltip",
+            [for (c in configs) if (c.type == "checkbox" && (c.tooltip == null || c.tooltip.tooltipText == "")) c.key].length, 0);
         var slider:Dynamic = [for (c in configs) if (c.type == "slider") c][0];
         check("formats: size sliders", [for (c in configs) if (c.type == "slider") c.key].join(","), "historyLimit,chatWidth,chatHeight");
         check("formats: historyLimit slider", slider.key + " " + slider.min + "-" + slider.max + "/" + slider.step, "historyLimit 100-2000/100");
         check("formats: default limit on the slider grid", (new Settings().historyLimit - slider.min) % slider.step, 0);
 
         var threw = false;
-        try Settings.parse("{") catch (_:Dynamic) threw = true;
+        try {
+            Settings.parse("{");
+        } catch (_:Dynamic) {
+            threw = true;
+        }
         check("invalid JSON throws", threw, true);
     }
 
@@ -134,18 +147,28 @@ class ChatPlusTest {
     }
 
     static function clashEntry(run:Dynamic):Dynamic {
-        return {id: "aaa-clash-test", mod: "Clash Test", run: run, commands: [
-            {names: ["Roll"], usage: "/roll <max>", text: "test roll", texts: {de: "Testwurf"}},
-            {names: ["clear"], usage: "/clear", text: "test clear"},
-            {usage: "/nonames"},
-        ]};
+        return {
+            id: "aaa-clash-test",
+            mod: "Clash Test",
+            run: run,
+            commands: [
+                {names: ["Roll"], usage: "/roll <max>", text: "test roll", texts: {de: "Testwurf"}},
+                {names: ["clear"], usage: "/clear", text: "test clear"},
+                {usage: "/nonames"},
+            ]
+        };
     }
 
     // A second owner of /roll without `run`.
     static final OTHER_ENTRY:Dynamic = {id: "other-mod", mod: "Other Mod", commands: [{names: ["roll"], usage: "/roll", text: "other roll"}]};
 
     static function modCommands():Void {
-        for (k in ModCommands.OWN) for (n in k.names) check("own help name /" + n + " is parsed", ChatCommands.parse(n, ["x"]) != null, true);
+        for (k in ModCommands.OWN) {
+            for (n in k.names) {
+                check("own help name /" + n + " is parsed", ChatCommands.parse(n, ["x"]) != null, true);
+            }
+        }
+
         var run = (chat:Dynamic, command:String, args:Dynamic) -> "sent";
         var entry = ModCommands.fromEntry(clashEntry(run));
         check("entry: names lower case, line with text, entry without names dropped", [for (c in entry.commands) c.names.join("/") + "=" + c.line].join(";"),
@@ -188,7 +211,8 @@ class ChatPlusTest {
         var flat = CommandRouter.help(all, false);
         check("flat help: same lines without headings", flat.length, grouped.length - 4);
         check("flat help: other mods named", flat[2], "/clear - test clear (Clash Test) [/clear:1]");
-        check("flat help: own and game lines unnamed", [flat[5], flat[flat.length - 1]].join("|"), "/leave - leave your group|Tab, Shift+Tab - switch channel while typing");
+        check("flat help: own and game lines unnamed", [flat[5], flat[flat.length - 1]].join("|"),
+            "/leave - leave your group|Tab, Shift+Tab - switch channel while typing");
     }
 
     static function playerBook():Void {
@@ -232,33 +256,33 @@ class ChatPlusTest {
         var group = [{name: "SENIX", uid: "grp", seen: 0.0, source: InGroup, live: true}, {name: "Senix", uid: "map", seen: 0.0, source: InGroup, live: true}];
         var friends = [{name: "Senix", uid: "new", seen: 0.0, source: Friend, live: true}, {name: "Other", uid: "x", seen: 0.0, source: Friend, live: true}];
         var found = PlayerLookup.candidates("senix", onMap, group, friends, book, "me");
-        check("order map, group, friends, book; one per account; self left out",
-            [for (s in found) s.uid + ":" + s.source].join(","), "map:map,grp:group,new:friend,old:chat");
+        check("order map, group, friends, book; one per account; self left out", [for (s in found) s.uid + ":" + s.source].join(","),
+            "map:map,grp:group,new:friend,old:chat");
         check("no match", PlayerLookup.candidates("Nobody", onMap, group, friends, book, "me").length, 0);
 
         var now = new Date(2026, 10, 21, 22, 0, 0).getTime();
         var today = new Date(2026, 10, 21, 21, 14, 0).getTime();
         var earlier = new Date(2026, 10, 20, 18, 2, 0).getTime();
-        check("live on map", PlayerLookup.describe({name: "S", uid: "1", seen: now, source: OnMap, className: "Rogue", level: 28, live: true}, now), "Rogue, level 28, on your map");
+        check("live on map", PlayerLookup.describe({name: "S", uid: "1", seen: now, source: OnMap, className: "Rogue", level: 28, live: true}, now),
+            "Rogue, level 28, on your map");
         check("live friend", PlayerLookup.describe({name: "S", uid: "1", seen: now, source: Friend, online: false, live: true}, now), "friend, offline");
         check("whisper today", PlayerLookup.describe({name: "S", uid: "1", seen: today, source: Chat, channel: "whisper"}, now), "whispered with you (21:14)");
-        check("group yesterday", PlayerLookup.describe({name: "S", uid: "1", seen: earlier, source: InGroup, level: 12}, now), "level 12, was in your group (20.11. 18:02)");
+        check("group yesterday", PlayerLookup.describe({name: "S", uid: "1", seen: earlier, source: InGroup, level: 12}, now),
+            "level 12, was in your group (20.11. 18:02)");
     }
 
     static function noteFormat():Void {
-        check("single line", NoteFormat.toMarkup("Group invite sent to <Anna>"),
-            '<font color="#FF9933">[Chat Plus] Group invite sent to &lt;Anna&gt;</font>');
+        check("single line", NoteFormat.toMarkup("Group invite sent to <Anna>"), '<font color="#FF9933">[Chat Plus] Group invite sent to &lt;Anna&gt;</font>');
         check("help", NoteFormat.toMarkup("Chat commands:\n/w <name> - whisper\nno command - here"),
-            '<font color="#FF9933">[Chat Plus] Chat commands:</font><br/>'
-            + '<font color="#8CC8FF">/w &lt;name&gt;</font><font color="#FF9933"> - whisper</font><br/>'
-            + '<font color="#FF9933">no command - here</font>');
+            '<font color="#FF9933">[Chat Plus] Chat commands:</font><br/>' +
+            '<font color="#8CC8FF">/w &lt;name&gt;</font><font color="#FF9933"> - whisper</font><br/>' + '<font color="#FF9933">no command - here</font>');
         check("key line", NoteFormat.toMarkup("x\nTab - switch", false),
             '<font color="#FF9933">x</font><br/><font color="#8CC8FF">Tab</font><font color="#FF9933"> - switch</font>');
         check("error note", NoteFormat.toMarkup("Error while x: y\n/w - z", true, true),
             '<font color="#E8604C">[Chat Plus] Error while x: y</font><br/><font color="#E8604C">/w - z</font>');
         check("heading gold without its mark, command line unchanged", NoteFormat.toMarkup("x\n## Chat Plus\n/leave - y", false),
-            '<font color="#FF9933">x</font><br/><font color="#FFD24A">Chat Plus</font><br/>'
-            + '<font color="#8CC8FF">/leave</font><font color="#FF9933"> - y</font>');
+            '<font color="#FF9933">x</font><br/><font color="#FFD24A">Chat Plus</font><br/>' +
+            '<font color="#8CC8FF">/leave</font><font color="#FF9933"> - y</font>');
         check("command without description", NoteFormat.toMarkup("x\n/leave"),
             '<font color="#FF9933">[Chat Plus] x</font><br/><font color="#FF9933">/leave</font>');
     }
@@ -270,42 +294,58 @@ class ChatPlusTest {
         check("report", GameCheck.report(gone),
             "Game elements not found (game update?), these features may not work:\nui.hud.ChatBox.handleCommand - chat commands\nst.Channel - mod messages, /w");
         check("static name", GameCheck.name({type: "HText", member: "withColor", kind: StaticMethod, feature: ""}), "HText::withColor");
-        check("every requirement but types names a member", [for (r in GameCheck.REQUIRED) if ((r.member == null) != (r.kind == Type)) GameCheck.name(r)].length, 0);
+        check("every requirement but types names a member",
+            [for (r in GameCheck.REQUIRED) if ((r.member == null) != (r.kind == Type)) GameCheck.name(r)].length, 0);
     }
 
     static function texts():Void {
         var placeholders = ~/\{\d\}/g;
         function marks(s:String):String {
             var found = [];
-            placeholders.map(s, r -> { found.push(r.matched(0)); ""; });
+            placeholders.map(s, r -> {
+                found.push(r.matched(0));
+                "";
+            });
             found.sort(Reflect.compare);
+
             return found.join("");
         }
+
         check("every English text has a German one", [for (k in Texts.EN.keys()) if (!Texts.DE.exists(k)) k].join(","), "");
         check("no German text without an English one", [for (k in Texts.DE.keys()) if (!Texts.EN.exists(k)) k].join(","), "");
-        check("same placeholders in both languages", [for (k in Texts.EN.keys()) if (Texts.DE.exists(k) && marks(Texts.EN.get(k)) != marks(Texts.DE.get(k))) k].join(","), "");
-        check("every section has a heading in both languages", [for (s in Settings.SECTIONS) if (!Texts.EN.exists("title." + s.id) || !Texts.DE.exists("title." + s.id)) s.id].join(","), "");
-        check("every setting has a label and a tooltip", [for (t in Settings.TOGGLES) if (!Texts.EN.exists("set." + t.key + ".label") || !Texts.EN.exists("set." + t.key + ".tip")) t.key].join(","), "");
+        check("same placeholders in both languages",
+            [for (k in Texts.EN.keys()) if (Texts.DE.exists(k) && marks(Texts.EN.get(k)) != marks(Texts.DE.get(k))) k].join(","), "");
+        check("every section has a heading in both languages",
+            [for (s in Settings.SECTIONS) if (!Texts.EN.exists("title." + s.id) || !Texts.DE.exists("title." + s.id)) s.id].join(","), "");
+        check("every setting has a label and a tooltip", [for (t in Settings.TOGGLES)
+            if (!Texts.EN.exists("set." + t.key + ".label") || !Texts.EN.exists("set." + t.key + ".tip")) t.key].join(","), "");
         check("English by default", Texts.get("invite.sent", ["Anna"]), "Group invite sent to Anna");
-        check("check result names the version", Texts.get("check.ok", [45, chatplus.Version.VERSION]), "Chat Plus " + chatplus.Version.VERSION + ": all 45 game elements the mod uses were found.");
+        check("check result names the version", Texts.get("check.ok", [45, chatplus.Version.VERSION]),
+            "Chat Plus " + chatplus.Version.VERSION + ": all 45 game elements the mod uses were found.");
         check("unknown key shows the key", Texts.get("no.such.key"), "no.such.key");
         Texts.lang = "de";
         check("German", Texts.get("invite.sent", ["Anna"]), "Gruppeneinladung an Anna gesendet");
         check("German, repeated placeholder", Texts.get("ignore.done", ["Bob"]), "Bob wird ignoriert. /unignore Bob macht das rückgängig");
-        check("German help keeps the command format", CommandRouter.help(ModCommands.all([]), true)[2], "/w, /whisper, /tell <Name> [Text] - einem Spieler zuflüstern");
+        check("German help keeps the command format", CommandRouter.help(ModCommands.all([]), true)[2],
+            "/w, /whisper, /tell <Name> [Text] - einem Spieler zuflüstern");
         check("German text of a registered command", ModCommands.fromEntry(clashEntry(null)).commands[0].line, "/roll <max> - Testwurf");
-        check("German description", PlayerLookup.describe({name: "S", uid: "1", seen: 0, source: OnMap, level: 28, live: true}, 0), "Stufe 28, auf deiner Karte");
+        check("German description", PlayerLookup.describe({name: "S", uid: "1", seen: 0, source: OnMap, level: 28, live: true}, 0),
+            "Stufe 28, auf deiner Karte");
         var formats:Dynamic = haxe.Json.parse(Settings.formatsJson());
         var configs:Array<Dynamic> = formats.configs;
         check("German settings page", configs[1].label, "Uhrzeit");
-        check("German headings", [for (c in configs) if (c.type == "title") c.label].join(","), "Chat,Charakterwechsel,Spieler & Befehle,/clear,Chatgröße,Fehlersuche");
+        check("German headings", [for (c in configs) if (c.type == "title") c.label].join(","),
+            "Chat,Charakterwechsel,Spieler & Befehle,/clear,Chatgröße,Fehlersuche");
         Texts.lang = "fr";
         check("other languages get English", Texts.get("clear.done"), "Chat cleared");
         Texts.lang = "en";
     }
 
     static function check(name:String, actual:Dynamic, expected:Dynamic):Void {
-        if (actual == expected) return;
+        if (actual == expected) {
+            return;
+        }
+
         failures++;
         Sys.println('FAIL $name: expected $expected, got $actual');
     }

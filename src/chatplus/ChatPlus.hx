@@ -68,30 +68,53 @@ class ChatPlus {
     static function checkGame():Void {
         try {
             var missing = GameCheck.missing(Game.exists);
-            for (r in missing) trace("[ChatPlus] game element not found: " + GameCheck.name(r) + " (" + r.feature + ")");
+            for (r in missing) {
+                trace("[ChatPlus] game element not found: " + GameCheck.name(r) + " (" + r.feature + ")");
+            }
+
             var note = GameCheck.report(missing);
-            if (note != null) showError(note);
-        } catch (error:Dynamic) log("checking the game", error);
+            if (note != null) {
+                showError(note);
+            }
+        } catch (error:Dynamic) {
+            log("checking the game", error);
+        }
     }
 
     static function showError(text:String):Void {
-        if (!settings.showErrors) return;
+        if (!settings.showErrors) {
+            return;
+        }
+
         pendingErrors.push(text);
         flushErrors();
     }
 
     static function flushErrors():Void {
-        if (!chatReady || flushing) return;
+        if (!chatReady || flushing) {
+            return;
+        }
+
         flushing = true;
+
         try {
-            while (pendingErrors.length > 0) addSystemMessage(pendingErrors.shift(), true, true, null, true);
-        } catch (error:Dynamic) trace("[ChatPlus] error while showing an error in the chat: " + Std.string(error));
+            while (pendingErrors.length > 0) {
+                addSystemMessage(pendingErrors.shift(), true, true, null, true);
+            }
+        } catch (error:Dynamic) {
+            trace("[ChatPlus] error while showing an error in the chat: " + Std.string(error));
+        }
+
         flushing = false;
     }
 
     /// Writes the options, e.g. after the chat was resized.
     public static function saveSettings():Void {
-        try File.saveContent(SETTINGS_FILE, settings.toJson()) catch (error:Dynamic) log("writing " + SETTINGS_FILE, error);
+        try {
+            File.saveContent(SETTINGS_FILE, settings.toJson());
+        } catch (error:Dynamic) {
+            log("writing " + SETTINGS_FILE, error);
+        }
     }
 
     static function onConfigChanged(payload:Dynamic):Void {
@@ -99,7 +122,15 @@ class ChatPlus {
         var widthBefore = settings.chatWidth;
         settings = loadSettings();
         var resize = ChatResize.current;
-        if (resize != null && settings.chatWidth != widthBefore) try resize.rebuildLines() catch (error:Dynamic) log("rebuilding the chat lines", error);
+
+        if (resize != null && settings.chatWidth != widthBefore) {
+            try {
+                resize.rebuildLines();
+            } catch (error:Dynamic) {
+                log("rebuilding the chat lines", error);
+            }
+        }
+
         if (settings.rememberPlayers && !rememberedBefore) {
             bookDirty = true;
             saveBook(true);
@@ -110,10 +141,17 @@ class ChatPlus {
     // options may not be loaded yet, so it is read again for every chat window.
     static function updateLanguage():Bool {
         var code:String = null;
-        try code = G.staticField("Options", "language") catch (_:Dynamic) {}
+
+        try {
+            code = G.staticField("Options", "language");
+        } catch (_:Dynamic) {}
         var lang = code == "de" ? "de" : "en";
-        if (lang == Texts.lang) return false;
+        if (lang == Texts.lang) {
+            return false;
+        }
+
         Texts.lang = lang;
+
         return true;
     }
 
@@ -121,12 +159,19 @@ class ChatPlus {
     static function writeFormats():Void {
         try {
             var json = Settings.formatsJson();
-            if (!FileSystem.exists(FORMATS_FILE) || File.getContent(FORMATS_FILE) != json) File.saveContent(FORMATS_FILE, json);
-        } catch (error:Dynamic) log("writing " + FORMATS_FILE, error);
+            if (!FileSystem.exists(FORMATS_FILE) || File.getContent(FORMATS_FILE) != json) {
+                File.saveContent(FORMATS_FILE, json);
+            }
+        } catch (error:Dynamic) {
+            log("writing " + FORMATS_FILE, error);
+        }
     }
 
     static function loadBook():PlayerBook {
-        if (!settings.rememberPlayers) return new PlayerBook();
+        if (!settings.rememberPlayers) {
+            return new PlayerBook();
+        }
+
         try {
             return FileSystem.exists(PLAYERS_FILE) ? PlayerBook.fromJson(File.getContent(PLAYERS_FILE)) : new PlayerBook();
         } catch (error:Dynamic) {
@@ -137,18 +182,32 @@ class ChatPlus {
 
     /// Writes the address book when it changed, at most every `SAVE_INTERVAL` seconds unless `now` is set.
     public static function saveBook(now = false):Void {
-        if (!settings.rememberPlayers || !bookDirty) return;
-        if (!now && Sys.time() - bookSaved < SAVE_INTERVAL) return;
+        if (!settings.rememberPlayers || !bookDirty) {
+            return;
+        }
+
+        if (!now && Sys.time() - bookSaved < SAVE_INTERVAL) {
+            return;
+        }
+
         try {
             File.saveContent(PLAYERS_FILE, book.toJson());
             bookDirty = false;
             bookSaved = Sys.time();
-        } catch (error:Dynamic) log("writing " + PLAYERS_FILE, error);
+        } catch (error:Dynamic) {
+            log("writing " + PLAYERS_FILE, error);
+        }
     }
 
     public static function remember(sightings:Array<Sighting>):Void {
-        for (s in sightings) book.record(s);
-        if (sightings.length > 0) bookDirty = true;
+        for (s in sightings) {
+            book.record(s);
+        }
+
+        if (sightings.length > 0) {
+            bookDirty = true;
+        }
+
         saveBook();
     }
 
@@ -158,13 +217,18 @@ class ChatPlus {
                 var json = File.getContent(SETTINGS_FILE);
                 var loaded = Settings.parse(json);
                 // Options added by a newer version get their default written into the file.
-                if (Settings.incomplete(json)) File.saveContent(SETTINGS_FILE, loaded.toJson());
+                if (Settings.incomplete(json)) {
+                    File.saveContent(SETTINGS_FILE, loaded.toJson());
+                }
+
                 return loaded;
             }
+
             // Written once, from the old location if there is one, so Better Mod Settings shows the current values.
             var initial = FileSystem.exists(OLD_SETTINGS_FILE) ? Settings.parse(File.getContent(OLD_SETTINGS_FILE)) : new Settings();
             FileSystem.createDirectory(haxe.io.Path.directory(SETTINGS_FILE));
             File.saveContent(SETTINGS_FILE, initial.toJson());
+
             return initial;
         } catch (error:Dynamic) {
             log("reading " + SETTINGS_FILE + ", using the defaults", error);
@@ -175,12 +239,20 @@ class ChatPlus {
     // Called by MenuApp.init, i.e. at game start and on every return to the character selection.
     @:hlx.prefix(st.player.ChatClient.resetHistory)
     static function beforeResetHistory():HlxPrefixControl {
-        if (!settings.keepHistory) return Continue;
+        if (!settings.keepHistory) {
+            return Continue;
+        }
+
         try {
             var history = G.staticField("st.player.ChatClient", "history");
             trimHistory(history, settings.historyLimit);
-            if (settings.switchMessage) addSeparator(history);
-        } catch (error:Dynamic) log("keeping the chat history", error);
+            if (settings.switchMessage) {
+                addSeparator(history);
+            }
+        } catch (error:Dynamic) {
+            log("keeping the chat history", error);
+        }
+
         return Skip;
     }
 
@@ -193,12 +265,16 @@ class ChatPlus {
     // Every chat command passes here and goes to its owner: Chat Plus, another mod or the game.
     @:hlx.prefix(ui.hud.ChatBox.handleCommand)
     static function beforeHandleCommand(instance:Dynamic, command:String, args:Dynamic):HlxPrefixResult<String> {
-        if (handingOn) return Continue;
+        if (handingOn) {
+            return Continue;
+        }
+
         try {
             return routeCommand(instance, command, args);
         } catch (error:Dynamic) {
             handingOn = false;
             log("running /" + command, error);
+
             return Continue;
         }
     }
@@ -211,8 +287,13 @@ class ChatPlus {
     static function routeCommand(chat:Dynamic, command:String, args:Dynamic):HlxPrefixResult<String> {
         var query = PlayerLookup.parseQuery(command);
         var name = query.name.toLowerCase();
-        if (query.pick == null) heldArgs.remove(name);
-        else if (G.elements(args).length == 0 && heldArgs.exists(name)) args = heldArgs.get(name);
+
+        if (query.pick == null) {
+            heldArgs.remove(name);
+        } else if (G.elements(args).length == 0 && heldArgs.exists(name)) {
+            args = heldArgs.get(name);
+        }
+
         return switch (CommandRouter.route(name, query.pick, commandOwners(), settings.commandFirstMatch)) {
             case Pass: Continue;
             case Run(owner): runCommand(chat, owner, name, args, query.pick != null);
@@ -236,17 +317,24 @@ class ChatPlus {
                 var text:Dynamic = Reflect.callMethod(null, run, [chat, name, args]);
                 return SkipWith(text == null ? "" : Std.string(text));
             case PassOn:
-                if (!picked) return Continue;
+                if (!picked) {
+                    return Continue;
+                }
+
                 handingOn = true;
                 var text:Dynamic = G.call("ui.hud.ChatBox", "handleCommand", chat, [name, args]);
                 handingOn = false;
+
                 return SkipWith(text == null ? "" : Std.string(text));
         }
     }
 
     static function showOwners(name:String, owners:Array<ModCommands.Owner>):Void {
         var lines = [Texts.get("owners.pick", [owners.length, name])];
-        for (i in 0...owners.length) lines.push((i + 1) + ") " + owners[i].name);
+        for (i in 0...owners.length) {
+            lines.push((i + 1) + ") " + owners[i].name);
+        }
+
         lines.push(Texts.get("owners.hint", [name]));
         addSystemMessage(lines.join("\n"), true);
     }
@@ -255,27 +343,52 @@ class ChatPlus {
     // and it is a good moment to note the players around.
     @:hlx.postfix(ui.hud.ChatBox.init)
     static function afterChatBoxInit(instance:Dynamic, result:Void):Void {
-        if (updateLanguage()) writeFormats();
+        if (updateLanguage()) {
+            writeFormats();
+        }
+
         chatReady = true;
         flushErrors();
-        try keepClosed(instance) catch (error:Dynamic) log("keeping the chat closed", error);
-        try new ChatResize(instance) catch (error:Dynamic) log("adding the chat resize handles", error);
+
+        try {
+            keepClosed(instance);
+        } catch (error:Dynamic) {
+            log("keeping the chat closed", error);
+        }
+
+        try {
+            new ChatResize(instance);
+        } catch (error:Dynamic) {
+            log("adding the chat resize handles", error);
+        }
+
         previousChat = instance;
+
         try {
             var player = G.call("ui.BaseElement", "get_myPlayer", instance);
-            if (player == null) return;
+            if (player == null) {
+                return;
+            }
+
             var live = LivePlayers.read(player);
             remember(live.onMap.concat(live.group).concat(live.friends));
-        } catch (error:Dynamic) log("noting the players around", error);
+        } catch (error:Dynamic) {
+            log("noting the players around", error);
+        }
     }
 
     // Every chat message, received or sent, once: its sender and whisper partner go into the address book.
     @:hlx.postfix(st.player.ChatClient.localReceiveMessage)
     static function afterLocalReceiveMessage(instance:Dynamic, message:Dynamic, result:Void):Void {
         try {
-            if (G.field(G.field(message, "args"), PLAIN_MARK) == true) return;
+            if (G.field(G.field(message, "args"), PLAIN_MARK) == true) {
+                return;
+            }
+
             remember(LivePlayers.fromMessage(message, Date.now().getTime()));
-        } catch (error:Dynamic) log("noting a chat sender", error);
+        } catch (error:Dynamic) {
+            log("noting a chat sender", error);
+        }
     }
 
     // The game re-applies the chat's style (480×250) in this pass when the chat or a line changes state
@@ -283,38 +396,63 @@ class ChatPlus {
     @:hlx.postfix(h2d.domkit.Style.sync)
     static function afterStyleSync(instance:Dynamic, dt:Null<Float>, result:Int):Int {
         var resize = ChatResize.current;
-        if (resize != null) try resize.applySize() catch (error:Dynamic) log("applying the chat size", error);
+
+        if (resize != null) {
+            try {
+                resize.applySize();
+            } catch (error:Dynamic) {
+                log("applying the chat size", error);
+            }
+        }
+
         return result;
     }
 
     // The minimize button toggles the CSS class "minimized"; focusing the input (Enter) removes it.
     // The old window's class is its state at the scene change, however it was reached.
     static function keepClosed(chat:Dynamic):Void {
-        if (!settings.rememberClosed || previousChat == null) return;
-        if (G.call("domkit.Properties", "hasClass", G.field(previousChat, "dom"), [MINIMIZED]) == true)
+        if (!settings.rememberClosed || previousChat == null) {
+            return;
+        }
+
+        if (G.call("domkit.Properties", "hasClass", G.field(previousChat, "dom"), [MINIMIZED]) == true) {
             G.call("domkit.Properties", "toggleClass", G.field(chat, "dom"), [MINIMIZED, true]);
+        }
     }
 
     @:hlx.postfix(ui.hud.ChatBoxMessage.init)
     static function afterChatBoxMessageInit(instance:Dynamic, result:Void):Void {
-        try decorate(instance) catch (error:Dynamic) log("adding the timestamp", error);
+        try {
+            decorate(instance);
+        } catch (error:Dynamic) {
+            log("adding the timestamp", error);
+        }
     }
 
     static function decorate(line:Dynamic):Void {
         var message = G.field(line, "message");
         var stamp:Null<Float> = G.field(message, "localStamp");
-        if (stamp == null) return;
+        if (stamp == null) {
+            return;
+        }
+
         var text = G.field(line, "msgText");
         var args = G.field(message, "args");
+
         if (G.field(args, PLAIN_MARK) == true) {
             // The mod's own notes: no "[HH:MM] [System]" header, own colors and prefix (NoteFormat).
             var note:String = G.field(message, "text");
             G.call("ui.comp.FmtText", "set_text", text, [NoteFormat.toMarkup(note, G.field(args, NO_PREFIX_MARK) != true, G.field(args, ERROR_MARK) == true)]);
+
             return;
         }
+
         var channel = G.field(message, "channel");
         var channelIndex = Type.enumIndex(channel);
-        if (!settings.timestamps || channelIndex == CHANNEL_SYSTEM || channelIndex == CHANNEL_SYSTEM_EVENT) return;
+        if (!settings.timestamps || channelIndex == CHANNEL_SYSTEM || channelIndex == CHANNEL_SYSTEM_EVENT) {
+            return;
+        }
+
         var time = ChatTime.format(stamp, Sys.time(), Date.now().getTime());
         var color:String = G.staticCall("ui.hud.ChatBoxMessage", "getChannelColor", [channel]);
         var prefix = withColor("[" + time + "] ", color);
@@ -329,16 +467,24 @@ class ChatPlus {
     // Runs while the character selection is open: no chat window reads the history then.
     static function trimHistory(history:Dynamic, limit:Int):Void {
         var extra = G.integer(G.field(history, "length")) - limit;
-        if (extra > 0) G.call("hl.types.ArrayObj", "splice", history, [0, extra]);
+        if (extra > 0) {
+            G.call("hl.types.ArrayObj", "splice", history, [0, extra]);
+        }
     }
 
     // A system message, so every chat window shows it below the previous character's messages.
     // Not added to an empty history (game start) or twice in a row (switching without chatting).
     static function addSeparator(history:Dynamic):Void {
         var messages = G.elements(history);
-        if (messages.length == 0) return;
+        if (messages.length == 0) {
+            return;
+        }
+
         var lastText:String = G.field(messages[messages.length - 1], "text");
-        if (lastText == Texts.get("separator")) return;
+        if (lastText == Texts.get("separator")) {
+            return;
+        }
+
         addSystemMessage(Texts.get("separator"));
     }
 
@@ -347,16 +493,23 @@ class ChatPlus {
     /// With `sender`, right-clicking the line opens the game's player menu for that account.
     public static function addSystemMessage(text:String, plain = false, prefix = true, ?sender:{name:String, uid:String}, error = false):Void {
         var channelType = HlxRuntime.resolveType("st.Channel");
-        if (channelType == null) throw "Game type unavailable: st.Channel";
+        if (channelType == null) {
+            throw "Game type unavailable: st.Channel";
+        }
+
         var channel = HlxRuntime.constructEnum(channelType, "System", [null]);
         // localReceiveMessage only stamps the message and appends it to the static history; it never reads `this`.
-        G.call("st.player.ChatClient", "localReceiveMessage", null, [{channel: channel, sender: sender, text: text, notify: null, args: plain ? {chatPlus: true, noPrefix: !prefix, error: error} : null}]);
+        G.call("st.player.ChatClient", "localReceiveMessage", null,
+            [{channel: channel, sender: sender, text: text, notify: null, args: plain ? {chatPlus: true, noPrefix: !prefix, error: error} : null}]);
     }
 
     /// Writes the error to `hlx.log`, and once per kind of error to the chat when `showErrors` is on.
     public static function log(action:String, error:Dynamic):Void {
         trace("[ChatPlus] error while " + action + ": " + Std.string(error));
-        if (settings == null || reportedErrors.exists(action)) return;
+        if (settings == null || reportedErrors.exists(action)) {
+            return;
+        }
+
         reportedErrors.set(action, true);
         showError(Texts.get("error.while", [action, Std.string(error)]));
     }

@@ -6,10 +6,12 @@ import chatplus.Texts;
 class WriteFormats {
     static function main():Void {
         var args = Sys.args();
+
         if (args.length != 1) {
             Sys.println("Usage: haxe formats.hxml <output file>");
             Sys.exit(1);
         }
+
         Texts.lang = "en";
         sys.io.File.saveContent(args[0], Settings.formatsJson());
         Sys.println("wrote " + args[0]);
