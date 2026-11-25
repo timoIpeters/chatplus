@@ -38,7 +38,10 @@ class ChatResize {
     public function new(chat:Dynamic) {
         this.chat = chat;
         footer = G.field(chat, "footer");
-        if (footer == null) throw "The chat has no footer";
+        if (footer == null) {
+            throw "The chat has no footer";
+        }
+
         var ui = G.staticField("ui.BaseUI", "current");
         hoverCursor = G.call("ui.BaseUI", "getIconCursor", ui, ["CursorButtonDraggable"]);
         dragCursor = G.call("ui.BaseUI", "getIconCursor", ui, ["CursorButtonDragging"]);
@@ -52,13 +55,22 @@ class ChatResize {
     function handle(width:Bool, height:Bool):Dynamic {
         var node = G.staticCall("domkit.Properties", "createNew", ["flow", G.field(chat, "dom"), [], {"class": "chat-plus-resize"}]);
         var flow = G.field(node, "obj");
-        if (flow == null) throw "Could not create a resize handle";
+        if (flow == null) {
+            throw "Could not create a resize handle";
+        }
+
         var properties = G.call("h2d.Flow", "getProperties", chat, [flow]);
         G.call("h2d.FlowProperties", "set_isAbsolute", properties, [true]);
         G.call("h2d.Flow", "set_enableInteractive", flow, [true]);
         var interactive = G.field(flow, "interactive");
-        if (interactive == null) throw "The resize handle has no interactive";
-        if (hoverCursor != null) G.call("h2d.Interactive", "set_cursor", interactive, [hoverCursor]);
+        if (interactive == null) {
+            throw "The resize handle has no interactive";
+        }
+
+        if (hoverCursor != null) {
+            G.call("h2d.Interactive", "set_cursor", interactive, [hoverCursor]);
+        }
+
         // A red line, visible while the handle is hovered or dragged.
         G.call("h2d.Flow", "set_backgroundTile", flow, [G.staticCall("h2d.Tile", "fromColor", [LINE_COLOR, 1, 1, 1.0])]);
         showLine(flow, false);
@@ -66,6 +78,7 @@ class ChatResize {
         HlxRuntime.setField(interactive, "onOver", (e:Dynamic) -> if (dragged == null) showLine(flow, true));
         HlxRuntime.setField(interactive, "onOut", (e:Dynamic) -> if (dragged != flow) showLine(flow, false));
         HlxRuntime.setField(interactive, "onPush", (e:Dynamic) -> startDrag(flow, interactive, width, height));
+
         return flow;
     }
 
@@ -79,14 +92,20 @@ class ChatResize {
             dragged = flow;
             dragWidth = width;
             dragHeight = height;
-            if (dragCursor != null) G.call("h2d.Interactive", "set_cursor", interactive, [dragCursor]);
+            if (dragCursor != null) {
+                G.call("h2d.Interactive", "set_cursor", interactive, [dragCursor]);
+            }
+
             G.call("h2d.Interactive", "startCapture", interactive, [(e:Dynamic) -> onDragEvent(flow, interactive, e), null, null]);
-        } catch (error:Dynamic) ChatPlus.log("starting to resize the chat", error);
+        } catch (error:Dynamic) {
+            ChatPlus.log("starting to resize the chat", error);
+        }
     }
 
     function onDragEvent(flow:Dynamic, interactive:Dynamic, e:Dynamic):Void {
         try {
             var kind = Type.enumConstructor(G.field(e, "kind"));
+
             if (kind == "EMove") {
                 var p = pointer();
                 var size = ChatSize.dragged(startWidth, startHeight, dragWidth ? p.x - startX : 0, dragHeight ? startY - p.y : 0, maxWidth(), maxHeight());
@@ -97,12 +116,22 @@ class ChatResize {
                 G.call("h2d.Interactive", "stopCapture", interactive);
                 dragged = null;
                 dragWidth = dragHeight = false;
-                if (hoverCursor != null) G.call("h2d.Interactive", "set_cursor", interactive, [hoverCursor]);
-                for (h in [top, right, corner]) showLine(h, false);
+                if (hoverCursor != null) {
+                    G.call("h2d.Interactive", "set_cursor", interactive, [hoverCursor]);
+                }
+
+                for (h in [top, right, corner]) {
+                    showLine(h, false);
+                }
+
                 ChatPlus.saveSettings();
-                if (ChatPlus.settings.chatWidth != startWidth) rebuildLines();
+                if (ChatPlus.settings.chatWidth != startWidth) {
+                    rebuildLines();
+                }
             }
-        } catch (error:Dynamic) ChatPlus.log("resizing the chat", error);
+        } catch (error:Dynamic) {
+            ChatPlus.log("resizing the chat", error);
+        }
     }
 
     /// Lines keep the width they were laid out for. They are removed and the game builds them again from the
@@ -114,18 +143,31 @@ class ChatResize {
     /// Removes the shown lines of `chat` (a `ui.hud.ChatBox`); the game builds them again from the history.
     /// `errorLines` also removes `chatError` lines. They are not in the history, so they don't come back.
     public static function rebuild(chat:Dynamic, errorLines = false):Void {
-        if (G.field(chat, "parent") == null) return;
+        if (G.field(chat, "parent") == null) {
+            return;
+        }
+
         var messages = G.field(chat, "messages");
         var count:Int = G.call("h2d.Object", "get_numChildren", messages);
         var lines = [];
+
         for (i in 0...count) {
             var child = G.call("h2d.Object", "getChildAt", messages, [i]);
             // The scrollbar and other parts of the message list stay.
-            if (child == null) continue;
+            if (child == null) {
+                continue;
+            }
+
             var type = hl.Type.getDynamic(child).getTypeName();
-            if (type == "ui.hud.ChatBoxMessage" || (errorLines && type == "ui.hud.ChatBoxLine")) lines.push(child);
+            if (type == "ui.hud.ChatBoxMessage" || (errorLines && type == "ui.hud.ChatBoxLine")) {
+                lines.push(child);
+            }
         }
-        for (line in lines) G.call("h2d.Object", "remove", line);
+
+        for (line in lines) {
+            G.call("h2d.Object", "remove", line);
+        }
+
         HlxRuntime.setField(chat, "messageIndex", 0);
     }
 
@@ -133,15 +175,24 @@ class ChatResize {
     // While a line shows, the mouse has to be over that handle.
     function hideStaleLines():Void {
         var shown = [for (h in [top, right, corner]) if (h != dragged && number(G.field(h, "alpha")) > 0) h];
-        if (shown.length == 0) return;
+        if (shown.length == 0) {
+            return;
+        }
+
         var p = pointer();
         var x = p.x - number(G.field(chat, "x"));
         var y = p.y - number(G.field(chat, "y"));
+
         for (h in shown) {
             var left = number(G.field(h, "x"));
             var upper = number(G.field(h, "y"));
-            var inside = x >= left && x < left + number(G.field(h, "calculatedWidth")) && y >= upper && y < upper + number(G.field(h, "calculatedHeight"));
-            if (!inside) showLine(h, false);
+            var inside = x >= left
+                && x < left + number(G.field(h, "calculatedWidth"))
+                && y >= upper
+                && y < upper + number(G.field(h, "calculatedHeight"));
+            if (!inside) {
+                showLine(h, false);
+            }
         }
     }
 
@@ -156,6 +207,7 @@ class ChatResize {
         HlxRuntime.setField(p, "x", G.call("h2d.Scene", "get_mouseX", scene));
         HlxRuntime.setField(p, "y", G.call("h2d.Scene", "get_mouseY", scene));
         G.call("h2d.Object", "globalToLocal", G.field(chat, "parent"), [p]);
+
         return {x: number(G.field(p, "x")), y: number(G.field(p, "y"))};
     }
 
@@ -163,7 +215,10 @@ class ChatResize {
     function maxWidth():Int {
         var parent = G.field(chat, "parent");
         var available = number(G.field(parent, "calculatedWidth"));
-        if (available <= 0) available = number(G.field(G.call("h2d.Object", "getScene", chat), "width"));
+        if (available <= 0) {
+            available = number(G.field(G.call("h2d.Object", "getScene", chat), "width"));
+        }
+
         return Std.int(available - number(G.field(chat, "x")));
     }
 
@@ -174,8 +229,17 @@ class ChatResize {
     function update():Void {
         try {
             var visible = G.field(footer, "visible") == true;
-            for (h in [top, right, corner]) if (G.field(h, "visible") != visible) G.call("h2d.Object", "set_visible", h, [visible]);
-            if (!visible) return;
+
+            for (h in [top, right, corner]) {
+                if (G.field(h, "visible") != visible) {
+                    G.call("h2d.Object", "set_visible", h, [visible]);
+                }
+            }
+
+            if (!visible) {
+                return;
+            }
+
             applySize();
             var width = ChatPlus.settings.chatWidth;
             var height = ChatPlus.settings.chatHeight;
@@ -183,33 +247,60 @@ class ChatResize {
             place(right, width - HANDLE, CORNER, HANDLE, height - CORNER);
             place(corner, width - CORNER, 0, CORNER, CORNER);
             hideStaleLines();
-        } catch (error:Dynamic) ChatPlus.log("applying the chat size", error);
+        } catch (error:Dynamic) {
+            ChatPlus.log("applying the chat size", error);
+        }
     }
 
     /// Gives the chat the saved size unless it is minimized (the game's style then sets it to 0×0 and hides its content).
     public function applySize():Void {
-        if (G.field(footer, "visible") != true || G.field(chat, "parent") == null) return;
+        if (G.field(footer, "visible") != true || G.field(chat, "parent") == null) {
+            return;
+        }
+
         var width = ChatPlus.settings.chatWidth;
         var height = ChatPlus.settings.chatHeight;
-        for (name in ["minWidth", "maxWidth"]) setInt(chat, name, width);
-        for (name in ["minHeight", "maxHeight"]) setInt(chat, name, height);
+        for (name in ["minWidth", "maxWidth"]) {
+            setInt(chat, name, width);
+        }
+
+        for (name in ["minHeight", "maxHeight"]) {
+            setInt(chat, name, height);
+        }
+
         var input = G.field(G.field(chat, "messageInput"), "input");
-        if (input != null && number(G.field(input, "maxWidth")) != width - INPUT_MARGIN) G.call("h2d.Text", "set_maxWidth", input, [width - INPUT_MARGIN]);
+        if (input != null && number(G.field(input, "maxWidth")) != width - INPUT_MARGIN) {
+            G.call("h2d.Text", "set_maxWidth", input, [width - INPUT_MARGIN]);
+        }
     }
 
     static function place(flow:Dynamic, x:Float, y:Float, width:Int, height:Int):Void {
-        for (name in ["minWidth", "maxWidth"]) setInt(flow, name, width);
-        for (name in ["minHeight", "maxHeight"]) setInt(flow, name, height);
-        if (number(G.field(flow, "x")) != x || number(G.field(flow, "y")) != y) G.call("h2d.Object", "setPosition", flow, [x, y]);
+        for (name in ["minWidth", "maxWidth"]) {
+            setInt(flow, name, width);
+        }
+
+        for (name in ["minHeight", "maxHeight"]) {
+            setInt(flow, name, height);
+        }
+
+        if (number(G.field(flow, "x")) != x || number(G.field(flow, "y")) != y) {
+            G.call("h2d.Object", "setPosition", flow, [x, y]);
+        }
     }
 
     static function setInt(flow:Dynamic, name:String, value:Int):Void {
-        if (G.field(flow, name) != value) G.call("h2d.Flow", "set_" + name, flow, [value]);
+        if (G.field(flow, name) != value) {
+            G.call("h2d.Flow", "set_" + name, flow, [value]);
+        }
     }
 
     static function number(value:Dynamic):Float {
-        if (value == null) return 0;
+        if (value == null) {
+            return 0;
+        }
+
         var n = Std.parseFloat(Std.string(value));
+
         return Math.isFinite(n) ? n : 0;
     }
 }

@@ -11,22 +11,30 @@ typedef NameQuery = {name:String, ?pick:Int};
 class PlayerLookup {
     public static function parseQuery(text:String):NameQuery {
         var colon = text.lastIndexOf(":");
+
         if (colon > 0) {
             var n = Std.parseInt(text.substr(colon + 1));
-            if (n != null && n > 0 && Std.string(n) == text.substr(colon + 1)) return {name: text.substr(0, colon), pick: n};
+            if (n != null && n > 0 && Std.string(n) == text.substr(colon + 1)) {
+                return {name: text.substr(0, colon), pick: n};
+            }
         }
+
         return {name: text};
     }
 
     /// One entry per account, best first. `selfUid` is left out.
-    public static function candidates(name:String, onMap:Array<Sighting>, group:Array<Sighting>, friends:Array<Sighting>,
-            book:PlayerBook, selfUid:Null<String>):Array<Sighting> {
+    public static function candidates(name:String, onMap:Array<Sighting>, group:Array<Sighting>, friends:Array<Sighting>, book:PlayerBook,
+            selfUid:Null<String>):Array<Sighting> {
         var key = name.toLowerCase();
         var result:Array<Sighting> = [];
         function add(list:Array<Sighting>) {
             for (s in list) {
-                if (s.name == null || s.uid == null || s.uid == selfUid || s.name.toLowerCase() != key) continue;
-                if (Lambda.exists(result, r -> r.uid == s.uid)) continue;
+                if (s.name == null || s.uid == null || s.uid == selfUid || s.name.toLowerCase() != key) {
+                    continue;
+                }
+                if (Lambda.exists(result, r -> r.uid == s.uid)) {
+                    continue;
+                }
                 result.push(s);
             }
         }
@@ -40,8 +48,14 @@ class PlayerLookup {
     /// `Rogue, level 28, on your map` or `whispered with you (21:14)`. `now` is the wall clock in ms.
     public static function describe(s:Sighting, now:Float):String {
         var parts:Array<String> = [];
-        if (s.className != null && s.className != "") parts.push(s.className);
-        if (s.level != null && s.level > 0) parts.push(Texts.get("describe.level", [s.level]));
+        if (s.className != null && s.className != "") {
+            parts.push(s.className);
+        }
+
+        if (s.level != null && s.level > 0) {
+            parts.push(Texts.get("describe.level", [s.level]));
+        }
+
         parts.push(switch (s.source) {
             case OnMap: Texts.get(s.live == true ? "describe.onMap" : "describe.wasOnMap");
             case InGroup: Texts.get(s.live == true ? "describe.inGroup" : "describe.wasInGroup");
@@ -49,7 +63,10 @@ class PlayerLookup {
             case Chat: chatText(s.channel);
         });
         var text = parts.join(", ");
-        if (s.live != true) text += " (" + seenAt(s.seen, now) + ")";
+        if (s.live != true) {
+            text += " (" + seenAt(s.seen, now) + ")";
+        }
+
         return text;
     }
 
@@ -67,6 +84,7 @@ class PlayerLookup {
     public static function seenAt(time:Float, now:Float):String {
         var date = Date.fromTime(time);
         var today = DateTools.format(Date.fromTime(now), "%Y-%m-%d") == DateTools.format(date, "%Y-%m-%d");
+
         return (today ? "" : DateTools.format(date, "%d.%m. ")) + DateTools.format(date, "%H:%M");
     }
 }

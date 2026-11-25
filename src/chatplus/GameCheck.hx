@@ -69,9 +69,15 @@ class GameCheck {
 
     /// One chat note for the missing elements, or null when nothing is missing.
     public static function report(missing:Array<Requirement>):Null<String> {
-        if (missing.length == 0) return null;
+        if (missing.length == 0) {
+            return null;
+        }
+
         var lines = [Texts.get("check.missing")];
-        for (r in missing) lines.push(name(r) + " - " + r.feature);
+        for (r in missing) {
+            lines.push(name(r) + " - " + r.feature);
+        }
+
         return lines.join("\n");
     }
 

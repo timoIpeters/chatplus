@@ -19,22 +19,37 @@ class CommandRouter {
     public static function ownersOf(name:String, all:Array<Owner>):Array<Owner> {
         var result:Array<Owner> = [];
         var passOn = false;
+
         for (o in all) {
-            if (!Lambda.exists(o.commands, c -> c.names.indexOf(name) >= 0)) continue;
+            if (!Lambda.exists(o.commands, c -> c.names.indexOf(name) >= 0)) {
+                continue;
+            }
+
             if (o.kind == PassOn) {
-                if (passOn) continue;
+                if (passOn) {
+                    continue;
+                }
+
                 passOn = true;
             }
+
             result.push(o);
         }
+
         return result;
     }
 
     /// `name` in lower case. `pick` is the N of `/name:N`.
     public static function route(name:String, pick:Null<Int>, all:Array<Owner>, firstMatch:Bool):Route {
         var owners = ownersOf(name, all);
-        if (pick != null) return pick <= owners.length ? Run(owners[pick - 1]) : NoPick(owners.length);
-        if (owners.length == 0) return Pass;
+        if (pick != null) {
+            return pick <= owners.length ? Run(owners[pick - 1]) : NoPick(owners.length);
+        }
+
+        if (owners.length == 0) {
+            return Pass;
+        }
+
         return owners.length == 1 || firstMatch ? Run(owners[0]) : Ask(owners);
     }
 
@@ -42,15 +57,26 @@ class CommandRouter {
     /// Shared commands end with their pick, e.g. ` [/roll:2]`.
     public static function help(all:Array<Owner>, grouped:Bool):Array<String> {
         var lines = [Texts.get("help.title")];
+
         for (o in all) {
-            if (o.commands.length == 0) continue;
-            if (grouped) lines.push(NoteFormat.HEADING + o.name);
+            if (o.commands.length == 0) {
+                continue;
+            }
+
+            if (grouped) {
+                lines.push(NoteFormat.HEADING + o.name);
+            }
+
             for (c in o.commands) {
                 var line = c.line;
-                if (!grouped && o.kind != Own && o.id != "") line += " (" + o.name + ")";
+                if (!grouped && o.kind != Own && o.id != "") {
+                    line += " (" + o.name + ")";
+                }
+
                 lines.push(line + pickMark(o, c, all));
             }
         }
+
         return lines;
     }
 
@@ -58,8 +84,11 @@ class CommandRouter {
         for (name in command.names) {
             var owners = ownersOf(name, all);
             var index = owners.indexOf(owner);
-            if (owners.length > 1 && index >= 0) return Texts.get("help.pick", [name, index + 1]);
+            if (owners.length > 1 && index >= 0) {
+                return Texts.get("help.pick", [name, index + 1]);
+            }
         }
+
         return "";
     }
 }
