@@ -2,7 +2,9 @@
 
 An HLX mod that improves the Farever chat: timestamps, history kept across character switches, chat commands with an address book of seen players, a resizable chat, settings in Better Mod Settings, English and German texts. Workspace layout, shared rules and tools: `../workbench/WORKSPACE.md`. How the game's chat works: `../workbench/research/chat.md`. `AUDITLOG.md` records decisions (D), findings (F), risks (R) and next steps (A).
 
-- Build: `haxe compile.hxml` → `build/chat-plus/chat-plus.hl`. Test: `haxe test.hxml`. Once per clone: `git clone --depth 1 https://github.com/hlx-framework/hlx-core.git vendor/hlx-core`.
+- Build: `haxe compile.hxml` → `build/chat-plus/chat-plus.hl`. Test: `haxe test.hxml`. Once per clone: `git clone --depth 1 https://github.com/hlx-framework/hlx-core.git vendor/hlx-core` and `git config core.hooksPath .githooks`.
+- Format: `../toolchain/hxformat.sh -s src -s tests -s tools` (style in `hxformat.json`). The pre-commit hook in `.githooks/` stops commits with unformatted `.hx` files.
+- Code style: braces around every `if`/`else`/`for`/`while`/`try`/`catch` body. A blank line after a closed block when more code follows, before a block with more than one line (above its comment), and before a final `return` that follows two or more statements. No blank line after `{` or before `}`. The formatter keeps these blank lines but doesn't check them.
 - `README.md` is the player-facing description (also used on Nexus Mods); build details stay here.
 - Release: set the version in `src/chatplus/Version.hx`, run `./release.sh` (tests, build, `configFormats.json` via `formats.hxml`, zip) → `build/release/chat-plus-<version>.zip` with `hlx/mods/chat-plus/` inside. Steps in `AUDITLOG.md` D30.
 - Logic that doesn't touch the game (time formatting, settings, texts, command parsing, player lookup, chat size) lives in its own classes and is tested in `tests/`.

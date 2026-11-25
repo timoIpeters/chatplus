@@ -7,6 +7,8 @@
 !/test.hxml
 !/formats.hxml
 !/release.sh
+!/hxformat.json
+!/.githooks/
 !/tools/
 !/src/
 !/tests/

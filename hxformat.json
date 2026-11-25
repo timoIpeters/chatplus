@@ -1,0 +1,8 @@
+{
+	"indentation": {"character": "    "},
+	"emptyLines": {"lineCommentsBetweenFunctions": "none"},
+	"wrapping": {
+		"objectLiteral": {"defaultWrap": "keep", "rules": []},
+		"arrayWrap": {"defaultWrap": "keep", "rules": []}
+	}
+}

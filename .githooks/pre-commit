@@ -1,0 +1,16 @@
+#!/bin/sh
+# Stops the commit when a staged .hx file is not formatted (hxformat.json).
+FMT="../toolchain/hxformat.sh"
+FILES=$(git diff --cached --name-only --diff-filter=ACMR -- '*.hx')
+[ -z "$FILES" ] && exit 0
+if [ ! -x "$FMT" ]; then
+    echo "pre-commit: $FMT not found, format check skipped" >&2
+    exit 0
+fi
+ARGS=""
+for f in $FILES; do ARGS="$ARGS -s $f"; done
+if ! OUT=$("$FMT" --check $ARGS); then
+    echo "$OUT" | grep "Incorrect formatting" >&2
+    echo "pre-commit: run $FMT -s src -s tests -s tools and stage the result" >&2
+    exit 1
+fi
