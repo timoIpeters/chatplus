@@ -1,27 +1,31 @@
 package chatplus;
 
 /// A `/help` line and the command names it covers (lower case, without `/`).
-typedef CommandHelp = {names:Array<String>, line:String};
+/// `topic`: the bus topic of another mod's command.
+typedef CommandHelp = {names:Array<String>, line:String, ?topic:String};
 
 /// How a command reaches its owner.
 enum OwnerKind {
     /// Chat Plus runs it.
     Own;
-    /// Chat Plus calls the mod's `run(chat, command, args)`.
-    Handler(run:Dynamic);
+    /// Chat Plus publishes the command on the HLX bus (`ModCommands.topic`).
+    Published;
     /// The next hook or the game gets it.
     PassOn;
 }
 
-/// An owner of chat commands. `id` is the mod folder, `""` for the game.
+/// An owner of chat commands. `id` is the mod's registry id, `""` for the game.
 typedef Owner = {id:String, name:String, kind:OwnerKind, commands:Array<CommandHelp>};
 typedef HelpKey = {key:String, names:Array<String>};
 
-/// Chat commands of the game, Chat Plus and other mods. Other mods register theirs in the registry bucket
-/// `chat-commands` as `{id, mod, commands: [{names, usage, text, ?texts}], ?run}`.
+/// Chat commands of the game, Chat Plus and other mods. Other mods follow the HLX Core convention: they register
+/// `{?id, name, ?description, commands: [{name, ?description}]}` in the registry bucket `mods` and subscribe to
+/// `command.execute.<name>` on the bus. Chat Plus extras per command: `aliases`, `usage`, `descriptions` and `scoped`,
+/// which with an `id` moves the command to `command.execute.<id>.<name>`.
 class ModCommands {
-    public static inline var BUCKET = "chat-commands";
+    public static inline var BUCKET = "mods";
     public static inline var SELF = "chat-plus";
+    static inline var TOPIC = "command.execute.";
 
     static final GAME:Array<HelpKey> = [
         {key: "help.all", names: ["all", "map"]},
@@ -51,7 +55,7 @@ class ModCommands {
         return {id: SELF, name: "Chat Plus", kind: Own, commands: helpLines(OWN)};
     }
 
-    /// All owners in hook order: mod folders A-Z, the game last.
+    /// All owners by id A-Z (ignoring case), the game last.
     public static function all(entries:Array<Dynamic>):Array<Owner> {
         var owners = [own()];
 
@@ -62,44 +66,68 @@ class ModCommands {
             }
         }
 
-        owners.sort((a, b) -> Reflect.compare(a.id, b.id));
+        owners.sort((a, b) -> Reflect.compare(a.id.toLowerCase(), b.id.toLowerCase()));
         owners.push(game());
 
         return owners;
     }
 
     /// The owner in a registry entry, or null for Chat Plus's own and malformed entries.
+    /// Without `id` (the registry gives no keys), the mod's `name` identifies it. An empty `id` counts as none.
+    /// A command with `scoped: true` runs on `command.execute.<id>.<name>`, if the entry has an `id`.
     public static function fromEntry(entry:Dynamic):Null<Owner> {
         try {
-            var id = text(Reflect.field(entry, "id"));
+            var name = text(Reflect.field(entry, "name"));
+            var registeredId = text(Reflect.field(entry, "id"));
+            if (registeredId == "") {
+                registeredId = null;
+            }
+
+            var id = registeredId == null ? name : registeredId;
             if (id == null || id == SELF) {
                 return null;
             }
 
-            var name = text(Reflect.field(entry, "mod"));
-            var run = Reflect.field(entry, "run");
             var commands:Array<CommandHelp> = [];
 
             for (c in items(Reflect.field(entry, "commands"))) {
-                var names = [for (n in items(Reflect.field(c, "names"))) text(n).toLowerCase()];
-                var usage = text(Reflect.field(c, "usage"));
-                if (names.length == 0 || usage == null) {
+                var main = text(Reflect.field(c, "name"));
+                if (main == null || main == "") {
                     continue;
                 }
 
-                var texts = Reflect.field(c, "texts");
-                var description = texts == null ? null : text(Reflect.field(texts, Texts.lang));
-                if (description == null) {
-                    description = text(Reflect.field(c, "text"));
+                var names = [main.toLowerCase()].concat([for (n in items(Reflect.field(c, "aliases"))) text(n).toLowerCase()]);
+                var usage = text(Reflect.field(c, "usage"));
+                if (usage == null) {
+                    usage = "/" + names.join(", /");
                 }
 
-                commands.push({names: names, line: description == null ? usage : usage + " - " + description});
+                var texts = Reflect.field(c, "descriptions");
+                var description = texts == null ? null : text(Reflect.field(texts, Texts.lang));
+                if (description == null) {
+                    description = text(Reflect.field(c, "description"));
+                }
+
+                var scope = Reflect.field(c, "scoped") == true && registeredId != null ? registeredId + "." : "";
+                commands.push({names: names, line: description == null ? usage : usage + " - " + description, topic: TOPIC + scope + main});
             }
 
-            return {id: id, name: name == null ? id : name, kind: run == null ? PassOn : Handler(run), commands: commands};
+            return {id: id, name: name == null ? id : name, kind: Published, commands: commands};
         } catch (_:Dynamic) {
             return null;
         }
+    }
+
+    /// The bus topic that runs `name` (typed name or alias) of `owner`: `command.execute.` plus, for a scoped command,
+    /// the owner's id and a dot, plus the command's registered name. Null if `owner` has no such command.
+    public static function topic(owner:Owner, name:String):Null<String> {
+        for (c in owner.commands) {
+            if (c.names.indexOf(name) >= 0) {
+                return c.topic;
+            }
+        }
+
+        return null;
     }
 
     static function helpLines(keys:Array<HelpKey>):Array<CommandHelp> {

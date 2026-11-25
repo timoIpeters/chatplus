@@ -23,6 +23,8 @@ class ChatPlus {
     static inline var FORMATS_FILE = "hlx/mods/chat-plus/configFormats.json";
     // Published by Better Mod Settings after it saved this mod's config.json.
     static inline var CONFIG_CHANGED = "better-mod-settings/config-changed/";
+    // Other mods publish a text here to show it as a local system line in the chat.
+    static inline var CHAT_PRINT = "chat.print";
     static inline var PLAYERS_FILE = "hlx/mods/chat-plus/players.json";
     // Seconds between writes of the address book while players are being recorded.
     static inline var SAVE_INTERVAL = 30;
@@ -59,8 +61,10 @@ class ChatPlus {
         updateLanguage();
         writeFormats();
         hlx.runtime.Bus.subscribe(CONFIG_CHANGED + MOD_NAME, onConfigChanged);
-        // Tells other mods that Chat Plus routes chat commands.
-        hlx.runtime.Registry.register(ModCommands.BUCKET, ModCommands.SELF, {id: ModCommands.SELF, mod: "Chat Plus"});
+        hlx.runtime.Bus.subscribe(CHAT_PRINT, onChatPrint);
+        // Tells other mods that Chat Plus routes chat commands. Without `commands`: Chat Plus runs its own.
+        hlx.runtime.Registry.register(ModCommands.BUCKET, ModCommands.SELF,
+            {id: ModCommands.SELF, name: "Chat Plus", description: "Chat improvements; runs the chat commands of other mods"});
         checkGame();
     }
 
@@ -114,6 +118,18 @@ class ChatPlus {
             File.saveContent(SETTINGS_FILE, settings.toJson());
         } catch (error:Dynamic) {
             log("writing " + SETTINGS_FILE, error);
+        }
+    }
+
+    static function onChatPrint(payload:Dynamic):Void {
+        if (payload == null) {
+            return;
+        }
+
+        try {
+            addSystemMessage(Std.string(payload), true, false);
+        } catch (error:Dynamic) {
+            log("showing another mod's chat line", error);
         }
     }
 
@@ -313,9 +329,9 @@ class ChatPlus {
             case Own:
                 var parsed = ChatCommands.parse(name, [for (a in G.elements(args)) Std.string(a)]);
                 return SkipWith(new CommandRunner(chat).run(parsed));
-            case Handler(run):
-                var text:Dynamic = Reflect.callMethod(null, run, [chat, name, args]);
-                return SkipWith(text == null ? "" : Std.string(text));
+            case Published:
+                hlx.runtime.Bus.publish(ModCommands.topic(owner, name), [for (a in G.elements(args)) Std.string(a)].join(" "));
+                return SkipWith("");
             case PassOn:
                 if (!picked) {
                     return Continue;

@@ -35,7 +35,7 @@ Tip: Tab and Shift+Tab switch the channel while you type. This is a game feature
 
 `/help` also shows the commands of other mods that support it, each mod under its own heading.
 
-If two mods use the same command, `/help` numbers them, e.g. `[/roll:1]` and `[/roll:2]`. A plain `/roll` uses the first one, `/roll:2` the second. Mods are numbered by folder name (A-Z), the game comes last.
+If two mods use the same command, `/help` numbers them, e.g. `[/roll:1]` and `[/roll:2]`. A plain `/roll` uses the first one, `/roll:2` the second. Mods are numbered by their id, usually the folder name (A-Z), the game comes last.
 
 To choose each time instead, turn off "Auto-pick a mod for shared commands". Then `/roll 100` shows:
 
@@ -112,34 +112,28 @@ At every start Chat Plus checks that the game still has the functions it uses. I
 
 ## For mod authors
 
-To show your commands in `/help`, add this to your mod's `main()`. Your mod doesn't need Chat Plus for it and works the same without it.
+Chat Plus follows the HLX Core convention for chat commands. Your mod doesn't need Chat Plus for it. Add this to your mod's `main()`:
 
 ```haxe
-hlx.runtime.Registry.register("chat-commands", "my-mod", {
-    id: "my-mod",                 // your mod folder, the same as the key
-    mod: "My Mod",                // heading in /help
-    commands: [
-        {names: ["roll"], usage: "/roll [max]", text: "roll a number", texts: {de: "eine Zahl würfeln"}},
-    ],
-    run: runCommand,              // optional
-});
+var commands:Array<Dynamic> = [{name: "roll", description: "roll a number", scoped: true}];  // the explicit type is needed, see HLX Core's Registry.hx
+var me = HlxRuntime.moduleName();  // your mod's file name, e.g. "my-mod"
+hlx.runtime.Registry.register("mods", me, {id: me, name: "My Mod", commands: commands});
+function run(args:Dynamic) roll(Std.string(args));
+hlx.runtime.Bus.subscribe("command.execute." + me + ".roll", run);
+hlx.runtime.Bus.subscribe("command.execute.roll", args -> if (hlx.runtime.Registry.get("mods", "chat-plus") == null) run(args));  // other chat mods
 ```
 
-- `names`: the command names, without `/`.
-- `usage` and `text`: shown as `/roll [max] - roll a number`. `texts` is optional and holds `text` in other languages, by the game's language code.
-- `run`: lets Chat Plus run your command when a player picks your mod by number. It takes the same arguments as `ui.hud.ChatBox.handleCommand`, `(chat:Dynamic, command:String, args:Dynamic)`, and returns the text to send, or `""`.
+- `name`: the command without `/`. For `/roll 100` Chat Plus publishes `command.execute.my-mod.roll` with `"100"`, everything after the command as one string.
+- `description`: shown in `/help` as `/roll - roll a number`, under your mod's `name`.
+- `scoped`: puts your `id` into the topic, so `/roll:2` reaches only the second of two mods with a `/roll`. Other chat mods publish `command.execute.roll`: the second `subscribe` is for them and does nothing while Chat Plus is installed. Without `scoped`, all mods with a `/roll` receive each other's `/roll`.
+- Optional: `aliases` (`["dice"]`), `usage` (`"/roll [max]"`, default `/roll, /dice`), `descriptions` (`description` by the game's language code, `{de: "eine Zahl würfeln"}`).
+- To answer in the chat, publish a text: `hlx.runtime.Bus.publish("chat.print", "Rolled 42")`.
 
-Also put this line first in your own `ChatBox.handleCommand` hook. It leaves the command to Chat Plus while Chat Plus is installed:
+If your mod also hooks `ui.hud.ChatBox.handleCommand` to work without a chat mod, put this line first in that hook. It leaves the command to Chat Plus while Chat Plus is installed:
 
 ```haxe
-if (hlx.runtime.Registry.get("chat-commands", "chat-plus") != null) return Continue;
+if (hlx.runtime.Registry.get("mods", "chat-plus") != null) return Continue;
 ```
-
-All of this is optional. Your command works without it, but:
-
-- Without registering, it isn't in `/help`.
-- Without `run`, it only gets a number if no other mod without `run` comes before yours (folder order).
-- Without the line in your hook, `/roll:2` still works. But if your folder name comes before `chat-plus`, a plain `/roll` always goes to your mod.
 
 ## License
 

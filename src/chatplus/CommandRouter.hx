@@ -15,28 +15,9 @@ enum Route {
 
 /// Picks a command's owner and builds `/help`.
 class CommandRouter {
-    /// The owners of `name`. Only the first `PassOn` owner is kept, as later ones can't be reached.
+    /// The owners of `name`.
     public static function ownersOf(name:String, all:Array<Owner>):Array<Owner> {
-        var result:Array<Owner> = [];
-        var passOn = false;
-
-        for (o in all) {
-            if (!Lambda.exists(o.commands, c -> c.names.indexOf(name) >= 0)) {
-                continue;
-            }
-
-            if (o.kind == PassOn) {
-                if (passOn) {
-                    continue;
-                }
-
-                passOn = true;
-            }
-
-            result.push(o);
-        }
-
-        return result;
+        return [for (o in all) if (Lambda.exists(o.commands, c -> c.names.indexOf(name) >= 0)) o];
     }
 
     /// `name` in lower case. `pick` is the N of `/name:N`.
