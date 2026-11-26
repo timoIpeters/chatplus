@@ -1,0 +1,133 @@
+[size=6][b]Chat Plus[/b][/size]
+
+A better chat for Farever: timestamps, chat history that survives a character switch, a resizable chat, and commands that find any player you have met by name.
+
+[size=5][b]Features[/b][/size]
+
+[table][tr][th]Feature[/th]
+[th]What it does[/th]
+[/tr]
+[tr][td][b]Timestamps[/b][/td]
+[td][HH:MM] in front of every player message, in the channel's color.[/td]
+[/tr]
+[tr][td][b]Chat kept on character switch[/b][/td]
+[td]Messages and whisper channels stay when you return to the character selection and log in with another character. An optional line "------ character switch ------" marks the switch.[/td]
+[/tr]
+[tr][td][b]Resizable chat[/b][/td]
+[td]Drag the chat's top edge (taller), right edge (wider) or top-right corner (both). Hovering an edge shows a red line and the drag cursor. The game's size is the smallest. Your size is saved.[/td]
+[/tr]
+[tr][td][b]A closed chat stays closed[/b][/td]
+[td]Close the chat with its minimize button and it stays closed when you enter a dungeon, change map or switch character. Press Enter or click its button to open it as usual.[/td]
+[/tr]
+[tr][td][b]More chat commands[/b][/td]
+[td]Whisper, invite, ignore or befriend players by name, leave your group, clear the chat (see Commands below).[/td]
+[/tr]
+[tr][td][b]Commands of other mods[/b][/td]
+[td]/help also lists the commands of other mods that support it. If two mods use the same command, you pick which one runs (see Commands below).[/td]
+[/tr]
+[tr][td][b]Address book[/b][/td]
+[td]Every player you meet (chat, whispers, group, map, friends) is remembered, also across game restarts, so /w and /invite work for players who are not around anymore.[/td]
+[/tr]
+[tr][td][b]Settings page[/b][/td]
+[td]In Esc → Mod Settings (with Better Mod Settings).[/td]
+[/tr]
+[tr][td][b]English and German[/b][/td]
+[td]The mod's texts follow the game's language.[/td]
+[/tr]
+[tr][td][b]Update check[/b][/td]
+[td]After a game update, the mod tells you in the chat if something it needs has changed.[/td]
+[/tr]
+[/table]
+[size=5][b]Commands[/b][/size]
+The game's own commands keep working: /all, /p, /s, /r. Chat Plus adds:
+
+[table][tr][th]Command[/th]
+[th]What it does[/th]
+[/tr]
+[tr][td][b]/w, /whisper, /tell <name> [message][/b][/td]
+[td]Opens a whisper channel with the player and sends the message[/td]
+[/tr]
+[tr][td][b]/invite, /inv <name>[/b][/td]
+[td]Invites the player to your group[/td]
+[/tr]
+[tr][td][b]/leave[/b][/td]
+[td]Leaves your group[/td]
+[/tr]
+[tr][td][b]/ignore <name>[/b][/td]
+[td]Ignores the player. /ignore alone lists the players you ignore[/td]
+[/tr]
+[tr][td][b]/unignore <name>[/b][/td]
+[td]Stops ignoring the player[/td]
+[/tr]
+[tr][td][b]/friend, /addfriend <name>[/b][/td]
+[td]Sends a friend request[/td]
+[/tr]
+[tr][td][b]/clear[/b][/td]
+[td]Removes chat messages. They don't come back after a scene change or character switch. What it removes is set in the settings[/td]
+[/tr]
+[tr][td][b]/help[/b][/td]
+[td]Lists all chat commands, also those of the game and other mods[/td]
+[/tr]
+[tr][td][b]/chatplus[/b][/td]
+[td]Checks that the game still has everything the mod uses[/td]
+[/tr]
+[/table]Tip: Tab and Shift+Tab switch the channel while you type. This is a game feature that the game's options don't list.
+
+[size=4][b]Commands of other mods[/b][/size]
+/help also shows the commands of other mods that support it, each mod under its own heading.
+
+If two mods use the same command, /help numbers them, e.g. /roll:1 and /roll:2. A plain /roll uses the first one, /roll:2 the second. Mods are numbered by their id, usually the folder name (A-Z), the game comes last.
+
+To choose each time instead, turn off "Auto-pick a mod for shared commands". Then /roll 100 shows:
+[code]
+[Chat Plus] 2 matches for /roll, pick one:
+1) Some Mod
+2) Other Mod
+Pick: /roll:1 (keeps what you typed after /roll)[/code]and /roll:2 runs the second mod's /roll 100.
+
+[size=4][b]Finding players by name[/b][/size]
+Names are matched without regard to case, among players on your map, in your group, your friends and the address book.
+
+Character names in Farever are not unique: several players can have the same name. When a name matches several players, Chat Plus lists them with what it knows (class, level, where and when you saw them):
+[code]
+[Chat Plus] 2 players named Senix, using 1:
+1) Senix - Rogue, level 28, on your map
+2) Senix - whispered with you (21:14)
+Pick another: /invite Senix:2, or right-click a line[/code]Right-click a line for the game's player menu, or type the name with the number (/invite Senix:2). By default /invite invites the most likely player right away, while /w, /ignore and /friend wait for your pick. A held whisper keeps your message: /w Senix:2 sends it.
+
+[size=5][b]Settings[/b][/size]
+Esc → Mod Settings → Chat Plus. Changes apply right away. Defaults in brackets.
+[list]
+[*][b]Chat:[/b] Timestamps (on), Keep a closed chat closed (on)[/*]
+[*][b]Character switch:[/b] Keep chat on character switch (on), Character switch line (off), Messages kept on character switch (500)[/*]
+[*][b]Players & commands:[/b] Remember players across restarts (on), Auto-pick shared names for /invite (on), Auto-pick shared names for /w (off), Auto-pick a mod for shared commands (on), Group /help by mod (on)[/*]
+[*][b]/clear:[/b] Clear All / Group / Local / whisper / system messages (on), Clear whisper channels (off), Show a note after /clear (off)[/*]
+[*][b]Chat size:[/b] Chat width, Chat height (480 × 250, the game's size)[/*]
+[*][b]Troubleshooting:[/b] Show mod errors in the chat (on)[/*]
+[/list]Without Better Mod Settings, the values can be edited in hlx\config\chat-plus\config.json (restart the game afterwards).
+
+[size=5][b]Requirements[/b][/size]
+[list]
+[*]HLX Core [/*]
+[*]Better Mod Settings by xWink, for the settings page (optional)[/*]
+[/list]
+[size=5][b]Installation[/b][/size]
+Install with Vortex, or extract the archive into the Farever game folder so that the mod ends up in <Farever folder>\hlx\mods\chat-plus\chat-plus.hl. Start the game. If the Chat Plus page is missing in Mod Settings on the first start, restart the game once.
+
+To remove the mod, delete hlx\mods\chat-plus\ and, for its settings, hlx\config\chat-plus\.
+
+[size=5][b]Good to know[/b][/size]
+[list]
+[*]Timestamps show when your client received the message.[/*]
+[*]/w and /invite can only find players the mod has seen: on your map, in your group, in your friend list, or in your chat. The game offers no name search.[/*]
+[*]The address book is stored in hlx\mods\chat-plus\players.json. Turn off "Remember players across restarts" to keep it for the current session only.[/*]
+[*]/clear cannot be undone.[/*]
+[*]The mod changes only your own client. Nothing is sent that the game's own chat and player menu couldn't send.[/*]
+[/list]
+[size=5][b]After a game update[/b][/size]
+At every start Chat Plus checks that the game still has the functions it uses. If something is missing, red [Chat Plus] lines in the chat name it and the feature that stops working; the rest of the mod keeps working. /chatplus runs the check at any time. Details are in hlx\logs\hlx.log.
+
+[size=5][b]For mod authors[/b][/size]
+Your mod can list its chat commands in /help and receive them over the HLX bus, following the HLX Core convention. How it works: [url=https://github.com/timoIpeters/chatplus#for-mod-authors]For mod authors on GitHub[/url].
+
+[i]Star this mod on [url=https://github.com/timoIpeters/chatplus]GitHub[/url][/i]
