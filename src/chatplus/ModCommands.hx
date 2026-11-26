@@ -19,9 +19,8 @@ typedef Owner = {id:String, name:String, kind:OwnerKind, commands:Array<CommandH
 typedef HelpKey = {key:String, names:Array<String>};
 
 /// Chat commands of the game, Chat Plus and other mods. Other mods follow the HLX Core convention: they register
-/// `{?id, name, ?description, commands: [{name, ?description}]}` in the registry bucket `mods` and subscribe to
-/// `command.execute.<name>` on the bus. Chat Plus extras per command: `aliases`, `usage`, `descriptions` and `scoped`,
-/// which with an `id` moves the command to `command.execute.<id>.<name>`.
+/// `{id, name, ?description, commands: [{name, ?description}]}` in the registry bucket `mods` and subscribe to
+/// `command.execute.<id>.<name>` on the bus. Chat Plus extras per command: `aliases`, `usage` and `descriptions`.
 class ModCommands {
     public static inline var BUCKET = "mods";
     public static inline var SELF = "chat-plus";
@@ -72,22 +71,15 @@ class ModCommands {
         return owners;
     }
 
-    /// The owner in a registry entry, or null for Chat Plus's own and malformed entries.
-    /// Without `id` (the registry gives no keys), the mod's `name` identifies it. An empty `id` counts as none.
-    /// A command with `scoped: true` runs on `command.execute.<id>.<name>`, if the entry has an `id`.
+    /// The owner in a registry entry, or null for Chat Plus's own entry and for entries without `id` or malformed.
     public static function fromEntry(entry:Dynamic):Null<Owner> {
         try {
-            var name = text(Reflect.field(entry, "name"));
-            var registeredId = text(Reflect.field(entry, "id"));
-            if (registeredId == "") {
-                registeredId = null;
-            }
-
-            var id = registeredId == null ? name : registeredId;
-            if (id == null || id == SELF) {
+            var id = text(Reflect.field(entry, "id"));
+            if (id == null || id == "" || id == SELF) {
                 return null;
             }
 
+            var name = text(Reflect.field(entry, "name"));
             var commands:Array<CommandHelp> = [];
 
             for (c in items(Reflect.field(entry, "commands"))) {
@@ -108,8 +100,7 @@ class ModCommands {
                     description = text(Reflect.field(c, "description"));
                 }
 
-                var scope = Reflect.field(c, "scoped") == true && registeredId != null ? registeredId + "." : "";
-                commands.push({names: names, line: description == null ? usage : usage + " - " + description, topic: TOPIC + scope + main});
+                commands.push({names: names, line: description == null ? usage : usage + " - " + description, topic: TOPIC + id + "." + main});
             }
 
             return {id: id, name: name == null ? id : name, kind: Published, commands: commands};
@@ -118,8 +109,7 @@ class ModCommands {
         }
     }
 
-    /// The bus topic that runs `name` (typed name or alias) of `owner`: `command.execute.` plus, for a scoped command,
-    /// the owner's id and a dot, plus the command's registered name. Null if `owner` has no such command.
+    /// The bus topic of `owner`'s command `name` (name or alias), or null if `owner` has no such command.
     public static function topic(owner:Owner, name:String):Null<String> {
         for (c in owner.commands) {
             if (c.names.indexOf(name) >= 0) {
@@ -145,7 +135,9 @@ class ModCommands {
         }
 
         #if hl
-        var array:hl.types.ArrayBase = value;
+        // An `Array<Dynamic>` is an `ArrayDyn`, which wraps an `ArrayBase` in `array`.
+        var inner:Dynamic = Reflect.field(value, "array");
+        var array:hl.types.ArrayBase = Std.isOfType(inner, hl.types.ArrayBase) ? inner : value;
         return [for (i in 0...array.length) array.getDyn(i)];
         #else
         return value;
