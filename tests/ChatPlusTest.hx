@@ -156,8 +156,8 @@ class ChatPlusTest {
         return {id: "aaa-clash-test", name: "Clash Test", commands: commands};
     }
 
-    // A second owner of /roll: no id, alias, no usage.
-    static final OTHER_ENTRY:Dynamic = {name: "Other Mod", commands: [{name: "dice", aliases: ["roll"], description: "other roll"}]};
+    // A second owner of /roll: upper-case id, alias, no usage.
+    static final OTHER_ENTRY:Dynamic = {id: "Other-Mod", name: "Other Mod", commands: [{name: "dice", aliases: ["roll"], description: "other roll"}]};
 
     static function modCommands():Void {
         for (k in ModCommands.OWN) {
@@ -170,39 +170,31 @@ class ChatPlusTest {
         check("entry: names lower case, line with description, command without name dropped",
             [for (c in entry.commands) c.names.join("/") + "=" + c.line].join(";"), "roll=/roll <max> - test roll;clear=/clear - test clear");
         check("entry is run over the bus", entry.kind, Published);
-        check("topic keeps the registered name", ModCommands.topic(entry, "roll"), "command.execute.Roll");
+        check("topic: id and the registered name", ModCommands.topic(entry, "roll"), "command.execute.aaa-clash-test.Roll");
         check("no topic for a command the owner lacks", ModCommands.topic(entry, "dance"), null);
 
         var other = ModCommands.fromEntry(OTHER_ENTRY);
-        check("entry without id: name identifies it", other.id, "Other Mod");
         check("aliases and default usage", other.commands[0].names.join("/") + "=" + other.commands[0].line, "dice/roll=/dice, /roll - other roll");
-        check("alias runs the command's topic", ModCommands.topic(other, "roll"), "command.execute.dice");
+        check("alias runs the command's topic", ModCommands.topic(other, "roll"), "command.execute.Other-Mod.dice");
 
-        var scoped:Dynamic = {id: "my-dice", name: "Dice", commands: [{name: "Roll", scoped: true}, {name: "flip"}]};
-        var scopedOwner = ModCommands.fromEntry(scoped);
-        check("scoped command runs on the id's topic", ModCommands.topic(scopedOwner, "roll"), "command.execute.my-dice.Roll");
-        check("unscoped command of the same entry keeps the plain topic", ModCommands.topic(scopedOwner, "flip"), "command.execute.flip");
-        check("scoped without id keeps the plain topic",
-            ModCommands.topic(ModCommands.fromEntry({name: "No Id", commands: [{name: "roll", scoped: true}]}), "roll"), "command.execute.roll");
-        var emptyId = ModCommands.fromEntry({id: "", name: "Empty Id", commands: [{name: "roll", scoped: true}]});
-        check("empty id: name identifies it, plain topic", emptyId.id + " " + ModCommands.topic(emptyId, "roll"), "Empty Id command.execute.roll");
-        var twoRolls = ModCommands.all([{id: "aaa-dice", name: "Dice A", commands: [{name: "roll"}]}, scoped]);
+        var twoRolls = ModCommands.all([{id: "aaa-dice", name: "Dice A", commands: [{name: "roll"}]}, {id: "my-dice", name: "Dice", commands: [{name: "Roll"}]}]);
         function pickedTopic(pick:Int):String {
             return switch (CommandRouter.route("roll", pick, twoRolls, true)) {
                 case Run(o): ModCommands.topic(o, "roll");
                 case other: Std.string(other);
             }
         }
-        check("/roll:1 of two mods with roll: plain topic of the first", pickedTopic(1), "command.execute.roll");
-        check("/roll:2 of two mods with roll: scoped topic of the second", pickedTopic(2), "command.execute.my-dice.Roll");
+        check("/roll:1 of two mods with roll: topic of the first", pickedTopic(1), "command.execute.aaa-dice.roll");
+        check("/roll:2 of two mods with roll: topic of the second", pickedTopic(2), "command.execute.my-dice.Roll");
         check("own entry skipped", ModCommands.fromEntry({id: "chat-plus", name: "Chat Plus"}), null);
         check("malformed entry skipped", ModCommands.fromEntry({id: "x", commands: 5}), null);
-        check("entry without id and name skipped", ModCommands.fromEntry({description: "x"}), null);
+        check("entry without id skipped", ModCommands.fromEntry({name: "No Id", commands: [{name: "roll"}]}), null);
+        check("entry with empty id skipped", ModCommands.fromEntry({id: "", name: "Empty Id"}), null);
         check("entry without commands has none", ModCommands.fromEntry({id: "plain", name: "Plain"}).commands.length, 0);
 
         var all = ModCommands.all([OTHER_ENTRY, clashEntry()]);
-        check("owners in id order ignoring case, game last", [for (o in all) o.id].join(","), "aaa-clash-test,chat-plus,Other Mod,");
-        check("owners of /roll", [for (o in CommandRouter.ownersOf("roll", all)) o.id].join(","), "aaa-clash-test,Other Mod");
+        check("owners in id order ignoring case, game last", [for (o in all) o.id].join(","), "aaa-clash-test,chat-plus,Other-Mod,");
+        check("owners of /roll", [for (o in CommandRouter.ownersOf("roll", all)) o.id].join(","), "aaa-clash-test,Other-Mod");
         check("owners of /clear", [for (o in CommandRouter.ownersOf("clear", all)) o.id].join(","), "aaa-clash-test,chat-plus");
 
         function route(name:String, pick:Null<Int>, firstMatch:Bool):String {

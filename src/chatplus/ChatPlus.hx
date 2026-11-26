@@ -62,7 +62,7 @@ class ChatPlus {
         writeFormats();
         hlx.runtime.Bus.subscribe(CONFIG_CHANGED + MOD_NAME, onConfigChanged);
         hlx.runtime.Bus.subscribe(CHAT_PRINT, onChatPrint);
-        // Tells other mods that Chat Plus routes chat commands. Without `commands`: Chat Plus runs its own.
+        // Tells other mods that Chat Plus routes chat commands. Its own commands are not listed here.
         hlx.runtime.Registry.register(ModCommands.BUCKET, ModCommands.SELF,
             {id: ModCommands.SELF, name: "Chat Plus", description: "Chat improvements; runs the chat commands of other mods"});
         checkGame();

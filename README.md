@@ -115,17 +115,15 @@ At every start Chat Plus checks that the game still has the functions it uses. I
 Chat Plus follows the HLX Core convention for chat commands. Your mod doesn't need Chat Plus for it. Add this to your mod's `main()`:
 
 ```haxe
-var commands:Array<Dynamic> = [{name: "roll", description: "roll a number", scoped: true}];  // the explicit type is needed, see HLX Core's Registry.hx
+var commands:Array<Dynamic> = [{name: "roll", description: "roll a number"}];  // Array<Dynamic> lets commands have different fields
 var me = HlxRuntime.moduleName();  // your mod's file name, e.g. "my-mod"
 hlx.runtime.Registry.register("mods", me, {id: me, name: "My Mod", commands: commands});
-function run(args:Dynamic) roll(Std.string(args));
-hlx.runtime.Bus.subscribe("command.execute." + me + ".roll", run);
-hlx.runtime.Bus.subscribe("command.execute.roll", args -> if (hlx.runtime.Registry.get("mods", "chat-plus") == null) run(args));  // other chat mods
+hlx.runtime.Bus.subscribe("command.execute." + me + ".roll", args -> roll(Std.string(args)));
 ```
 
-- `name`: the command without `/`. For `/roll 100` Chat Plus publishes `command.execute.my-mod.roll` with `"100"`, everything after the command as one string.
+- `id`: required. Chat Plus puts it into the topic, so `/roll:2` reaches only the second of two mods with a `/roll`.
+- `name` of a command: the command without `/`. For `/roll 100` Chat Plus publishes `command.execute.my-mod.roll` with `"100"`, everything after the command as one string.
 - `description`: shown in `/help` as `/roll - roll a number`, under your mod's `name`.
-- `scoped`: puts your `id` into the topic, so `/roll:2` reaches only the second of two mods with a `/roll`. Other chat mods publish `command.execute.roll`: the second `subscribe` is for them and does nothing while Chat Plus is installed. Without `scoped`, all mods with a `/roll` receive each other's `/roll`.
 - Optional: `aliases` (`["dice"]`), `usage` (`"/roll [max]"`, default `/roll, /dice`), `descriptions` (`description` by the game's language code, `{de: "eine Zahl würfeln"}`).
 - To answer in the chat, publish a text: `hlx.runtime.Bus.publish("chat.print", "Rolled 42")`.
 
